@@ -108,6 +108,25 @@ Accounts are created by an admin from the server (`python -m app.create_admin`);
 there is no self-signup. Verbatim dictations are deleted at commit time, and a
 purge job handles abandoned captures and expired tokens on a retention window.
 
+## Demo account
+
+Optional, off by default. With `DEMO_ENABLED=true`, a single shareable
+address (`DEMO_EMAIL` / `DEMO_PASSWORD`) lets anyone try the app — but it is not
+a shared login. Each visitor gets a **private throwaway account** seeded with the
+same sample class, kept for 30 minutes and then deleted with everything in it.
+
+That is deliberately not the obvious design. Sharing one real account would mean
+serializing visitors behind a lock and rebuilding its data after each one; both
+break down because people close the tab instead of logging out, which leaves the
+lock held and the reset unrun. Handing out disposable accounts removes the lock
+and the reset step: visitors cannot collide, and "fresh data" is simply what a
+new account is. Cleanup runs on a timer, not on an event nobody triggers.
+
+Spending is capped separately, since the demo calls a paid model: per input
+length, per visitor, and — durably, so a restart cannot reset it — across all
+visitors per day. Details and the cron entry are in
+[deploy/README.md](deploy/README.md#demo-account).
+
 ## Status
 
 Built for a single teacher and a handful of colleagues (~10 users), and used in

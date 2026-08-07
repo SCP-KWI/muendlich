@@ -63,6 +63,10 @@ class LoginThrottle:
                 factor = min(2**overflow, 8)
                 bucket.locked_until = now + self._lockout * factor
 
+    # The demo-start throttle counts successes rather than failures — same
+    # counter, opposite meaning at the call site, so give it an honest name.
+    record = record_failure
+
     def reset(self, key: str) -> None:
         with self._lock:
             self._buckets.pop(key, None)
@@ -95,6 +99,15 @@ email_throttle = LoginThrottle(
     lockout_seconds=settings.login_lockout_seconds,
 )
 
+# Demo logins create a database row and seed a dataset before anyone is
+# authenticated, so the *successful* path needs a per-IP limit of its own — the
+# throttles above only count failures.
+demo_start_throttle = LoginThrottle(
+    max_attempts=settings.demo_starts_per_ip,
+    window_seconds=settings.login_window_seconds,
+    lockout_seconds=settings.login_lockout_seconds,
+)
+
 
 def client_ip(request: Request) -> str:
     """Client address as seen after uvicorn's proxy-header handling.
@@ -107,6 +120,7 @@ def client_ip(request: Request) -> str:
 
 
 def reset_all() -> None:
-    """Test helper — clears both throttles."""
+    """Test helper — clears every throttle."""
     ip_throttle._buckets.clear()
     email_throttle._buckets.clear()
+    demo_start_throttle._buckets.clear()

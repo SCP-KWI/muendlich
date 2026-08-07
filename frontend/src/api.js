@@ -25,13 +25,27 @@ class ApiError extends Error {
 // reuse and (correctly) get the whole family revoked — logging the user out.
 let refreshInFlight = null;
 
+// The access token is renewed silently, so a *rejected* renewal is the only
+// signal that a session has really ended — an expired demo, a revoked token
+// family, a changed password. Individual screens can't each handle that, so the
+// app registers one handler and gets returned to the login screen.
+let onSessionLost = null;
+
+export function setSessionLostHandler(fn) {
+  onSessionLost = fn || null;
+}
+
 async function tryRefresh() {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
     try {
       const res = await fetch("/api/auth/refresh", { method: "POST" });
       if (!res.ok) {
+        // Only a session we actually held counts as lost — a fresh visitor's
+        // restoreSession() also lands here, and that is not an expiry.
+        const hadSession = accessToken !== null;
         accessToken = null;
+        if (hadSession && onSessionLost) onSessionLost();
         return false;
       }
       accessToken = (await res.json()).access_token;
@@ -82,6 +96,7 @@ export const api = {
   login: (email, password) =>
     request("POST", "/api/auth/login", { email, password }),
   logout: () => request("POST", "/api/auth/logout"),
+  me: () => request("GET", "/api/me"),
 
   listClasses: () => request("GET", "/api/classes"),
   listStudents: (classId) =>

@@ -19,7 +19,7 @@ from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app import ratelimit  # noqa: E402
 from app.auth import hash_password  # noqa: E402
-from app.db import Base, get_db  # noqa: E402
+from app.db import Base, enable_sqlite_foreign_keys, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Class, Observation, Student, StudentAlias, User, UserRole  # noqa: E402
 
@@ -33,6 +33,8 @@ def db_engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    # Same ON DELETE semantics as production; see app.db.
+    enable_sqlite_foreign_keys(engine)
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)

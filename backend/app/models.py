@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Text,
@@ -48,6 +49,16 @@ def _now() -> dt.datetime:
     return dt.datetime.now(dt.UTC)
 
 
+def as_utc(value: dt.datetime) -> dt.datetime:
+    """Re-attach UTC to a value that lost its tzinfo in the database.
+
+    Postgres round-trips aware datetimes; sqlite (dev and the test suite) hands
+    back naive ones. Everything stored here is written as UTC, so assuming UTC
+    for a naive value is correct rather than merely convenient.
+    """
+    return value if value.tzinfo is not None else value.replace(tzinfo=dt.UTC)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -65,10 +76,20 @@ class User(Base):
     password_changed_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
+    # Non-NULL marks a throwaway demo user (see app/demo.py) and is the instant
+    # its session dies. Real accounts leave this NULL forever. Indexed because
+    # the sweeper and the concurrency cap both filter on it.
+    demo_expires_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True
+    )
 
     classes: Mapped[list["Class"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+
+    @property
+    def is_demo(self) -> bool:
+        return self.demo_expires_at is not None
 
 
 class RefreshToken(Base):
@@ -98,10 +119,21 @@ class RefreshToken(Base):
     def is_active(self) -> bool:
         if self.revoked_at is not None:
             return False
-        expires = self.expires_at
-        if expires.tzinfo is None:  # sqlite round-trips naive datetimes
-            expires = expires.replace(tzinfo=dt.UTC)
-        return expires > _now()
+        return as_utc(self.expires_at) > _now()
+
+
+class DemoUsage(Base):
+    """One row per UTC day counting cloud calls made by demo visitors.
+
+    Deliberately *not* an in-process counter: the whole point is that it bounds
+    spending, and an in-memory tally resets to zero every time the container
+    restarts — which is exactly what happens when something is going wrong.
+    """
+
+    __tablename__ = "demo_usage"
+
+    day: Mapped[dt.date] = mapped_column(Date, primary_key=True)
+    ai_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
 class Class(Base):

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api, setToken } from "./api.js";
 
-export function Login({ onLoggedIn }) {
+export function Login({ onLoggedIn, notice = null }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -25,6 +25,7 @@ export function Login({ onLoggedIn }) {
   return (
     <div className="card">
       <h1>muendlich</h1>
+      {notice && <p className="notice">{notice}</p>}
       <form onSubmit={submit}>
         <label>
           E-Mail

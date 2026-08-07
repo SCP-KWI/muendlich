@@ -106,6 +106,7 @@ python -m app.create_admin you@example.com        # prompts; resets revoke sessi
 python -m app.purge --dry-run                     # retention preview
 python -m app.purge                               # apply retention
 python -m app.purge --student <uuid>              # erasure request
+python -m app.purge --demo-only                   # sweep expired demo sessions
 ```
 
 ## Configuration
@@ -123,3 +124,8 @@ with defaults. The ones that change behaviour most:
 | `RAW_CAPTURE_RETENTION_DAYS` | `30` | Enforced by `app.purge` |
 | `ACCESS_TOKEN_MINUTES` | `15` | Refresh cookie carries the 30-day session |
 | `LOGIN_MAX_ATTEMPTS_PER_EMAIL` | `5` | In-process; single-replica assumption |
+| `DEMO_ENABLED` | `false` | Shareable demo; each login gets a private throwaway account (`app/demo.py`) |
+| `DEMO_PASSWORD` | — | Required when enabled, ≥12 chars in production. Published, so it is a spending control, not a secret |
+| `DEMO_SESSION_MINUTES` | `30` | Hard deadline, enforced on refresh *and* on every request |
+| `DEMO_MAX_CONCURRENT` | `5` | Live sessions at once — the main lever on worst-case spend |
+| `DEMO_DAILY_CAPTURE_BUDGET` | `200` | Cloud calls per day across all visitors; durable, survives restarts |

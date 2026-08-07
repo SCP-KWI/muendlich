@@ -86,6 +86,11 @@ class MeResponse(BaseModel):
     id: uuid.UUID
     email: str
     role: str
+    # Demo sessions are time-boxed, so the PWA shows the time left rather than
+    # cutting the visitor off without warning. Seconds remaining rather than a
+    # deadline, so a wrong clock on the visitor's device can't skew it.
+    demo: bool = False
+    demo_seconds_remaining: int | None = None
 
 
 # ---- classes ----

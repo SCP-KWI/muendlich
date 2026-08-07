@@ -24,6 +24,18 @@ x-backend-env: &backend-env
   # refuses to start if this is false.
   COOKIE_SECURE: "true"
   CORS_ORIGINS: ${APP_ORIGIN:?APP_ORIGIN is required - the public https:// origin of the app}
+  # Shareable demo. Off unless you opt in; when on, the caps below are what
+  # bound the cloud bill, so they are passed explicitly rather than defaulted
+  # silently in the image.
+  DEMO_ENABLED: ${DEMO_ENABLED:-false}
+  DEMO_EMAIL: ${DEMO_EMAIL:-test@muendlich.ch}
+  DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+  DEMO_SESSION_MINUTES: ${DEMO_SESSION_MINUTES:-30}
+  DEMO_MAX_CONCURRENT: ${DEMO_MAX_CONCURRENT:-5}
+  DEMO_MAX_CAPTURES_PER_SESSION: ${DEMO_MAX_CAPTURES_PER_SESSION:-15}
+  DEMO_DAILY_CAPTURE_BUDGET: ${DEMO_DAILY_CAPTURE_BUDGET:-200}
+  DEMO_MAX_RAW_TEXT: ${DEMO_MAX_RAW_TEXT:-1500}
+  DEMO_STARTS_PER_IP: ${DEMO_STARTS_PER_IP:-10}
 
 x-hardening: &hardening
   security_opt: ["no-new-privileges:true"]

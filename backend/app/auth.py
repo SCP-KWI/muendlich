@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from .config import settings
 from .db import get_db
-from .models import RefreshToken, User, UserRole
+from .demo import is_expired as demo_session_expired
+from .models import RefreshToken, User, UserRole, as_utc
 
 logger = logging.getLogger("muendlich.auth")
 
@@ -28,6 +29,8 @@ _bearer = HTTPBearer(auto_error=True)
 
 REFRESH_COOKIE = "muendlich_refresh"
 COOKIE_PATH = "/api/auth"  # refresh token is only sent to the auth endpoints
+
+DEMO_EXPIRED_DETAIL = "Die Demo-Sitzung ist abgelaufen. Bitte neu anmelden."
 
 
 def _now() -> dt.datetime:
@@ -189,6 +192,12 @@ def consume_refresh_token(
     if user is None:
         return None
 
+    # A demo session past its deadline cannot be extended. Refusing here is what
+    # makes the 30-minute cap real: the access token is short-lived, but the PWA
+    # renews it silently, so blocking rotation is the actual end of the session.
+    if demo_session_expired(user):
+        return None
+
     record.revoked_at = _now()
     return user, record.family_id
 
@@ -224,10 +233,14 @@ def current_user(
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
 
+    # Checked on every request, not just on refresh, so an access token minted
+    # shortly before the deadline can't outlive it.
+    if demo_session_expired(user):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, DEMO_EXPIRED_DETAIL)
+
     changed_at = user.password_changed_at
     if changed_at is not None:
-        if changed_at.tzinfo is None:  # sqlite round-trips naive datetimes
-            changed_at = changed_at.replace(tzinfo=dt.UTC)
+        changed_at = as_utc(changed_at)
         # 1s slack: `iat` is whole seconds, password_changed_at has microseconds.
         if issued_at + 1 < int(changed_at.timestamp()):
             raise HTTPException(

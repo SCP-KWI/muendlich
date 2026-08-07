@@ -110,6 +110,21 @@ h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
 .small { font-size: .8rem; }
 .error { color: var(--err); font-weight: 500; }
 
+/* Involuntary sign-out on the login screen: an explanation, not a failure. */
+.notice {
+  background: var(--warn-tint); color: var(--warn);
+  border-radius: var(--r-sm); padding: 10px 12px; margin: 0 0 14px;
+  font-size: .9rem;
+}
+
+/* ---- Demo session ----------------------------------------- */
+.demo-banner {
+  background: var(--warn-tint); color: var(--warn);
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 10px 13px; margin-bottom: 14px;
+  font-size: .88rem; line-height: 1.4;
+}
+
 /* ---- Top bar ---------------------------------------------- */
 .topbar {
   display: flex; justify-content: space-between; align-items: center;
