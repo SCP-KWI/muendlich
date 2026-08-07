@@ -175,6 +175,47 @@ docker compose exec -T backend python -m app.purge             # apply
 `RAW_CAPTURE_RETENTION_DAYS` (default 30) sets the window. Step 7 above schedules
 this nightly.
 
+## Demo account
+
+Off unless `DEMO_ENABLED=true`. When it is on, logging in with `DEMO_EMAIL` does
+not sign anyone in to a shared account: it creates a **private, throwaway user**
+with its own copy of the sample dataset and a `DEMO_SESSION_MINUTES` deadline.
+Visitors therefore never collide, nobody has to wait for a lock, and every
+visitor starts from the same clean state.
+
+Set `DEMO_PASSWORD` to something you are willing to publish — it is shared with
+whoever you send the demo to, so treat it as a spending control, not a secret,
+and never reuse a password from elsewhere. It must not be a password you use for
+a real account, and `DEMO_EMAIL` must not belong to one either (the backend
+refuses to start the demo if it does, and logs an error).
+
+**Schedule the sweeper.** Expired sessions are deleted by `app.purge`, not by
+logout — most visitors close the tab instead of logging out, so this is what
+actually removes their data and frees their slot:
+
+```bash
+( crontab -l 2>/dev/null; \
+  echo "*/5 * * * * cd $APP_DIR/deploy && /usr/bin/docker compose exec -T backend python -m app.purge --demo-only >> /var/log/muendlich-purge.log 2>&1" \
+) | crontab -
+```
+
+`--demo-only` skips the retention scan, so it is cheap enough to run every five
+minutes. The nightly job from step 7 sweeps demo sessions too.
+
+**What bounds the cost.** The only endpoint that spends money is capture
+creation, and demo visitors hit three separate limits there: `DEMO_MAX_RAW_TEXT`
+per call, `DEMO_MAX_CAPTURES_PER_SESSION` per visitor, and
+`DEMO_DAILY_CAPTURE_BUDGET` across everyone (counted in the `demo_usage` table,
+so a restart does not reset it). `DEMO_MAX_CONCURRENT` caps how many sessions run
+at once. Watch it with:
+
+```bash
+docker compose logs backend | grep '"action":"demo'
+```
+
+`demo.budget.daily_exhausted` means the day's allowance ran out and visitors are
+being turned away — raise the budget or accept the cut-off.
+
 **Erasure requests** are separate from the in-app delete. `DELETE` on a pupil in
 the UI keeps their observations (deliberately — grading continuity). To erase a
 pupil *and* every observation about them:

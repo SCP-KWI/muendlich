@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
+from .. import demo
 from ..ai.pipeline import process
 from ..audit import audit
 from ..auth import current_user
@@ -50,6 +51,9 @@ def create_capture(
     db: Session = Depends(get_db),
 ) -> DraftResponse:
     lesson_date = body.lesson_date or _today()
+
+    if user.is_demo:
+        _enforce_demo_budget(body, user, db)
 
     try:
         sent_to_cloud, proposed = process(body.raw_text, cls)
@@ -104,6 +108,44 @@ def create_capture(
         sent_to_cloud=sent_to_cloud,
         proposed=proposed,
     )
+
+
+def _enforce_demo_budget(
+    body: CaptureCreate, user: User, db: Session
+) -> None:
+    """Gate the one endpoint that spends money, for demo visitors only.
+
+    Three limits, because they fail differently: input length bounds the cost of
+    a single call, the per-session count bounds one visitor, and the daily
+    counter bounds every visitor together. A rate limit alone would bound none of
+    them over a long enough afternoon.
+    """
+    if len(body.raw_text) > settings.demo_max_raw_text:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"In der Demo sind maximal {settings.demo_max_raw_text} Zeichen pro "
+            "Aufnahme möglich.",
+        )
+
+    if demo.session_budget_left(db, user) <= 0:
+        audit("demo.budget.session_exhausted", actor=user.id)
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"In dieser Demo-Sitzung sind "
+            f"{settings.demo_max_captures_per_session} Auswertungen möglich. "
+            "Das Limit ist erreicht.",
+        )
+
+    # Claimed before the call, not after: a request that times out has already
+    # cost money, so it has to count. Commits `db`, which is safe here because
+    # nothing has been staged on the session yet.
+    if not demo.consume_daily_budget(db):
+        audit("demo.budget.daily_exhausted", actor=user.id)
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Das Demo-Kontingent für heute ist aufgebraucht. "
+            "Bitte morgen erneut versuchen.",
+        )
 
 
 def _record_failed(

@@ -63,5 +63,6 @@ ignore = [
 "scripts/**" = ["S101"]                          # manual smoke scripts
 "app/seed.py" = ["S105", "S106"]                 # dev-only demo password
 "app/schemas.py" = ["S105"]                      # "bearer" is a token *type*, not a secret
+"app/demo.py" = ["S105"]                         # a deliberately unusable hash, not a password
 # Alembic owns the style of its generated files; don't fight the template.
 "alembic/**" = ["UP007", "UP035", "E402"]

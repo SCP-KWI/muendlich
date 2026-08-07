@@ -2,7 +2,7 @@ import logging
 import secrets
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger("muendlich.config")
@@ -17,6 +17,9 @@ _PLACEHOLDER_SECRETS = {
 }
 
 _MIN_SECRET_LEN = 32
+# The demo password is meant to be shared, so it can be memorable — but it must
+# not be guessable, because guessing it costs money.
+_MIN_DEMO_PASSWORD_LEN = 12
 
 
 class Settings(BaseSettings):
@@ -76,6 +79,32 @@ class Settings(BaseSettings):
     login_max_attempts_per_email: int = 5
     login_window_seconds: int = 300
     login_lockout_seconds: int = 900
+
+    # ---- shareable demo account ----
+    # Logging in with DEMO_EMAIL does not sign you in to one shared account: it
+    # mints a private throwaway user with its own seeded data, discarded when the
+    # session expires. So concurrent visitors never see each other's work and
+    # every visitor starts fresh, without a lock or a reset step.
+    #
+    # DEMO_EMAIL must not belong to a real account — the demo branch in
+    # routers/auth.py shadows the normal login path for that address.
+    demo_enabled: bool = False
+    demo_email: str = "test@muendlich.ch"
+    demo_password: str = ""  # required when demo_enabled
+    demo_session_minutes: int = Field(default=30, gt=0)
+    # How many demo sessions may be alive at once. This — not a per-session
+    # limit — is what bounds worst-case cloud spend per half hour.
+    demo_max_concurrent: int = Field(default=5, gt=0)
+    # Cloud calls one visitor may make. A rate alone is not a budget, so this is
+    # a hard count, not a window.
+    demo_max_captures_per_session: int = Field(default=15, gt=0)
+    # Cloud calls all demo visitors together may make per UTC day. Durable (see
+    # models.DemoUsage) so a restart loop can't reset the meter.
+    demo_daily_capture_budget: int = Field(default=200, gt=0)
+    # Tighter than MAX_RAW_TEXT: input length is a direct token-cost multiplier.
+    demo_max_raw_text: int = Field(default=1_500, gt=0)
+    # New demo sessions one IP may start per login_window_seconds.
+    demo_starts_per_ip: int = Field(default=10, gt=0)
 
     # Default page size for list endpoints that can grow without bound.
     default_page_size: int = 100
@@ -151,6 +180,34 @@ class Settings(BaseSettings):
             "Set ANONYMIZE_ENABLED=true, or ALLOW_CLOUD_PII=true to override "
             "deliberately (you need a data processing agreement for that)."
         )
+
+    @model_validator(mode="after")
+    def _check_demo(self) -> "Settings":
+        """The demo password is public by design — but it still gates spending."""
+        email = self.demo_email.strip().lower()
+        object.__setattr__(self, "demo_email", email)
+
+        if not self.demo_enabled:
+            return self
+
+        if not email:
+            raise ValueError("DEMO_EMAIL is required when DEMO_ENABLED=true.")
+
+        password = self.demo_password.strip()
+        if not password:
+            raise ValueError("DEMO_PASSWORD is required when DEMO_ENABLED=true.")
+        if password in _PLACEHOLDER_SECRETS:
+            raise ValueError(
+                "DEMO_PASSWORD is set to a placeholder value from .env.example."
+            )
+        if self.is_production and len(password) < _MIN_DEMO_PASSWORD_LEN:
+            raise ValueError(
+                f"DEMO_PASSWORD must be at least {_MIN_DEMO_PASSWORD_LEN} characters "
+                "in production — it is shared publicly, so it is the only thing "
+                "standing between the internet and your cloud budget."
+            )
+        object.__setattr__(self, "demo_password", password)
+        return self
 
     @model_validator(mode="after")
     def _check_provider_key(self) -> "Settings":

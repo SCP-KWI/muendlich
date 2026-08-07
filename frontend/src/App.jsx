@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
-import { api, isLoggedIn, restoreSession, setToken } from "./api.js";
+import { useCallback, useEffect, useState } from "react";
+import {
+  api,
+  isLoggedIn,
+  restoreSession,
+  setSessionLostHandler,
+  setToken,
+} from "./api.js";
 import { Login } from "./Login.jsx";
 import { ClassList } from "./ClassList.jsx";
 import { Capture } from "./Capture.jsx";
@@ -12,6 +18,13 @@ export function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
   const [checking, setChecking] = useState(true);
   const [section, setSection] = useState("capture"); // "capture" | "review" | "manage"
+  // Shown on the login screen after an involuntary sign-out.
+  const [notice, setNotice] = useState(null);
+  // Demo sessions are time-boxed. Held as an absolute local deadline derived
+  // once from the server's "seconds remaining", so a wrong device clock can't
+  // skew the countdown.
+  const [demoDeadline, setDemoDeadline] = useState(null);
+  const [demoLeft, setDemoLeft] = useState(null);
 
   // light/dark theme (persisted; initial value applied by the inline script in index.html)
   const [dark, setDark] = useState(
@@ -40,20 +53,83 @@ export function App() {
       .finally(() => setChecking(false));
   }, []);
 
-  function resetCapture() {
+  const resetCapture = useCallback(() => {
     setKlass(null);
     setDraft(null);
     setResult(null);
     setView("classes");
-  }
+  }, []);
+
+  // Back to the login screen. `message` explains an involuntary sign-out; a
+  // deliberate one needs no explanation.
+  const endSession = useCallback(
+    (message = null) => {
+      setToken(null);
+      setAuthed(false);
+      setDemoDeadline(null);
+      setDemoLeft(null);
+      resetCapture();
+      setSection("capture");
+      setNotice(message);
+    },
+    [resetCapture]
+  );
 
   function logout() {
-    api.logout().catch(() => {}); // clear the refresh cookie server-side
-    setToken(null);
-    setAuthed(false);
-    resetCapture();
-    setSection("capture");
+    // Revokes the token family server-side; for a demo session it also discards
+    // the session's data immediately instead of waiting for the sweeper.
+    api.logout().catch(() => {});
+    endSession();
   }
+
+  // One place handles a session ending underneath us, rather than every screen
+  // that happens to be making a request when it does.
+  useEffect(() => {
+    setSessionLostHandler(() =>
+      endSession("Die Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.")
+    );
+    return () => setSessionLostHandler(null);
+  }, [endSession]);
+
+  useEffect(() => {
+    if (!authed) return undefined;
+    let cancelled = false;
+    api
+      .me()
+      .then((m) => {
+        if (!cancelled) {
+          setDemoDeadline(
+            m.demo ? Date.now() + m.demo_seconds_remaining * 1000 : null
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authed]);
+
+  // Counts down the demo banner, and signs the visitor out when it reaches zero
+  // rather than waiting for the next request to fail — an idle tab should not
+  // sit on a dead session showing data that no longer exists.
+  useEffect(() => {
+    if (demoDeadline === null) {
+      setDemoLeft(null);
+      return undefined;
+    }
+    const tick = () => {
+      const left = Math.max(0, Math.round((demoDeadline - Date.now()) / 1000));
+      setDemoLeft(left);
+      if (left === 0) {
+        endSession(
+          "Die Demo-Sitzung ist abgelaufen. Die Demo-Daten wurden gelöscht."
+        );
+      }
+    };
+    tick();
+    const id = setInterval(tick, 15_000);
+    return () => clearInterval(id);
+  }, [demoDeadline, endSession]);
 
   if (checking) {
     return (
@@ -71,7 +147,13 @@ export function App() {
         <div className="login-top">
           <HelpButton />
         </div>
-        <Login onLoggedIn={() => setAuthed(true)} />
+        <Login
+          notice={notice}
+          onLoggedIn={() => {
+            setNotice(null);
+            setAuthed(true);
+          }}
+        />
       </main>
     );
   }
@@ -99,6 +181,14 @@ export function App() {
           </button>
         </div>
       </header>
+
+      {demoLeft !== null && (
+        <div className="demo-banner" role="status">
+          <strong>Demo-Sitzung</strong> — noch{" "}
+          {Math.max(1, Math.ceil(demoLeft / 60))} Minuten. Sie arbeiten auf einer
+          eigenen Kopie mit Beispieldaten; sie wird am Ende gelöscht.
+        </div>
+      )}
 
       <nav className="tabs">
         <button

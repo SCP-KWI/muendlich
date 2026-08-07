@@ -11,6 +11,10 @@ Retention (`--dry-run` to preview):
     Committed captures already have their verbatim text cleared at commit time;
     this catches abandoned and failed ones.
   * expired refresh_tokens rows are deleted (they can no longer authenticate).
+  * demo users whose session has ended are deleted, taking their classes,
+    pupils, captures and observations with them by cascade. This is what makes
+    "every visitor starts fresh" true — logout is an optimisation, this is the
+    guarantee — so run it often (every few minutes), not nightly.
 
 Erasure (`--student`) is deliberately separate from the API's DELETE
 /api/students/{id}, which keeps observations for grading continuity. This
@@ -23,6 +27,7 @@ import uuid
 
 from sqlalchemy import delete, select
 
+from . import demo
 from .auth import purge_expired_refresh_tokens
 from .config import settings
 from .db import SessionLocal
@@ -46,20 +51,33 @@ def apply_retention(dry_run: bool = False) -> dict[str, int]:
         )
 
         if dry_run:
+            demo_count = demo.sweep_expired(db, dry_run=True)
             print(
                 f"[dry-run] would delete {capture_count} raw_captures older than "
-                f"{cutoff.date().isoformat()}"
+                f"{cutoff.date().isoformat()} and {demo_count} expired demo sessions"
             )
-            return {"raw_captures": capture_count, "refresh_tokens": 0}
+            return {
+                "raw_captures": capture_count,
+                "refresh_tokens": 0,
+                "demo_sessions": demo_count,
+            }
 
         db.execute(delete(RawCapture).where(RawCapture.created_at < cutoff))
         tokens = purge_expired_refresh_tokens(db)
         db.commit()
+        # After the token purge: sweeping a demo user cascades to its tokens
+        # anyway, and doing it second keeps the two counts from double-reporting.
+        demo_count = demo.sweep_expired(db)
         print(
             f"deleted {capture_count} raw_captures older than "
-            f"{cutoff.date().isoformat()}, {tokens} expired refresh tokens"
+            f"{cutoff.date().isoformat()}, {tokens} expired refresh tokens, "
+            f"{demo_count} expired demo sessions"
         )
-        return {"raw_captures": capture_count, "refresh_tokens": tokens}
+        return {
+            "raw_captures": capture_count,
+            "refresh_tokens": tokens,
+            "demo_sessions": demo_count,
+        }
     finally:
         db.close()
 
@@ -99,7 +117,22 @@ def main() -> int:
     parser.add_argument(
         "--student", metavar="UUID", help="erase this pupil and all their observations"
     )
+    parser.add_argument(
+        "--demo-only",
+        action="store_true",
+        help="sweep expired demo sessions and nothing else (cheap; run often)",
+    )
     args = parser.parse_args()
+
+    if args.demo_only:
+        db = SessionLocal()
+        try:
+            count = demo.sweep_expired(db, dry_run=args.dry_run)
+        finally:
+            db.close()
+        prefix = "[dry-run] would delete" if args.dry_run else "deleted"
+        print(f"{prefix} {count} expired demo sessions")
+        return 0
 
     if args.student:
         try:
