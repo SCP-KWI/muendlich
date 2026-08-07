@@ -1,0 +1,46 @@
+# Local development stack. For production use deploy/docker-compose.yml.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: muendlich
+      POSTGRES_USER: muendlich
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U muendlich"]
+      interval: 5s
+      retries: 5
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &backend-env
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+psycopg://muendlich:${DB_PASSWORD}@db:5432/muendlich
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env — openssl rand -hex 32}
+      AI_PROVIDER: ${AI_PROVIDER:-stub}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Defaults to true. With AI_PROVIDER=anthropic the backend refuses to
+      # start if this is false (override with ALLOW_CLOUD_PII=true).
+      ANONYMIZE_ENABLED: ${ANONYMIZE_ENABLED:-true}
+      DEFAULT_TZ: "Europe/Zurich"
+      COOKIE_SECURE: "false"              # local http dev only
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    restart: "no"
+
+  backend:
+    build: ./backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment: *backend-env
+    ports:
+      - "127.0.0.1:8000:8000"   # loopback only, even in dev
+
+volumes:
+  db_data:

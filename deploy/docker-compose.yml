@@ -1,0 +1,120 @@
+# Production stack, intended to sit behind a TLS-terminating reverse proxy.
+# db + backend stay on a private network; only `web` also joins the external
+# proxy network (PROXY_NETWORK) so the proxy can reach it by container name.
+#
+# NOTE: `web` listens on 8080 (the image runs unprivileged). Point the proxy
+# host at muendlich-web:8080, not :80.
+
+x-backend-env: &backend-env
+  ENVIRONMENT: production
+  DATABASE_URL: postgresql+psycopg://muendlich:${DB_PASSWORD}@muendlich-db:5432/muendlich
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate with openssl rand -hex 32}
+  AI_PROVIDER: ${AI_PROVIDER:-anthropic}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  STRUCTURER_MODEL: ${STRUCTURER_MODEL:-claude-sonnet-4-6}
+  STRUCTURER_TIMEOUT_S: ${STRUCTURER_TIMEOUT_S:-30}
+  # Local pseudonymization before the cloud hop. The backend refuses to start
+  # with a cloud provider and this set to false (unless ALLOW_CLOUD_PII=true).
+  ANONYMIZE_ENABLED: ${ANONYMIZE_ENABLED:-true}
+  RAW_CAPTURE_RETENTION_DAYS: ${RAW_CAPTURE_RETENTION_DAYS:-30}
+  DEFAULT_TZ: ${DEFAULT_TZ:-Europe/Zurich}
+  # Short access token; the 30-day refresh cookie keeps teachers logged in.
+  ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
+  # Refresh cookie is HTTPS-only (served via the proxy over TLS). Production
+  # refuses to start if this is false.
+  COOKIE_SECURE: "true"
+  CORS_ORIGINS: ${APP_ORIGIN:?APP_ORIGIN is required - the public https:// origin of the app}
+
+x-hardening: &hardening
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+
+services:
+  db:
+    image: postgres:16
+    container_name: muendlich-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: muendlich
+      POSTGRES_USER: muendlich
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U muendlich"]
+      interval: 5s
+      retries: 5
+
+  # Migrations are an explicit, one-shot deployment step. Running them from the
+  # backend's CMD races across restarts and turns a failed migration into a
+  # crash loop; here a failure stops the deploy with a readable error.
+  migrate:
+    build: ../backend
+    container_name: muendlich-migrate
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+    restart: "no"
+    read_only: true
+    tmpfs: [/tmp]
+    <<: *hardening
+
+  backend:
+    build: ../backend
+    container_name: muendlich-backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment: *backend-env
+    networks: [internal]
+    read_only: true
+    tmpfs: [/tmp]
+    <<: *hardening
+    healthcheck:
+      # python:slim ships neither curl nor wget.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  web:
+    build: ../frontend
+    container_name: muendlich-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [internal, proxy]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    <<: *hardening
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  internal:
+  # The already-existing Docker network your reverse proxy is attached to.
+  # Find it with `docker network ls` and set PROXY_NETWORK in .env.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:?PROXY_NETWORK is required - the Docker network your reverse proxy is on}
+
+volumes:
+  db_data:

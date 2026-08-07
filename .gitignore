@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local dev
+.env
+.env.local
+backend/dev.db
+backend/*.db
+
+# Node / PWA
+node_modules/
+frontend/dist/
+frontend/dev-dist/
+
+# NOTE: backend/requirements.lock is intentionally committed — it is what the
+# container installs from, and reproducible builds depend on it being in git.
