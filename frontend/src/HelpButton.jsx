@@ -12,6 +12,7 @@ export function HelpButton() {
   return (
     <a
       className="help-btn"
+      data-tour="handbook"
       href="/handbuch"
       target="_blank"
       rel="noopener"

@@ -125,6 +125,45 @@ h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
   font-size: .88rem; line-height: 1.4;
 }
 
+/* ---- Guided tour ------------------------------------------ */
+/* Transparent by design: the dimming comes from the spotlight's box-shadow.
+   This layer exists only to swallow clicks aimed at the app, which a shadow
+   cannot do. */
+.tour-blocker { position: fixed; inset: 0; z-index: 1000; }
+.tour-hole {
+  position: fixed; z-index: 1001; pointer-events: none;
+  border-radius: var(--r); outline: 2px solid var(--primary);
+  /* The cut-out trick: an oversized spread dims everything except this box. */
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55);
+  transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease;
+}
+.tour-card {
+  position: fixed; z-index: 1002;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 16px 18px; box-shadow: var(--shadow);
+}
+.tour-card:focus { outline: none; }
+.tour-card h3 { margin: 0 0 6px; }
+.tour-card p { margin: 0; font-size: .92rem; line-height: 1.45; }
+.tour-card .tour-step {
+  color: var(--muted); font-size: .74rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; margin-bottom: 5px;
+}
+.tour-actions { display: flex; align-items: center; gap: 2px; margin-top: 15px; }
+.tour-spacer { flex: 1; }
+.tour-next {
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 9px 17px; font-weight: 600;
+}
+.tour-next:hover { filter: brightness(1.05); }
+.tour-link {
+  color: var(--primary-ink); font-weight: 600; font-size: .92rem;
+  text-decoration: none; padding: 9px 10px; border-radius: var(--r-sm);
+}
+.tour-link:hover { background: var(--primary-tint); }
+@media (prefers-reduced-motion: reduce) { .tour-hole { transition: none; } }
+
 /* ---- Top bar ---------------------------------------------- */
 .topbar {
   display: flex; justify-content: space-between; align-items: center;

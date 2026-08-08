@@ -13,6 +13,29 @@ import { DraftReview } from "./DraftReview.jsx";
 import { Review } from "./Review.jsx";
 import { Manage } from "./Manage.jsx";
 import { HelpButton } from "./HelpButton.jsx";
+import { Tour, TOUR_STEPS } from "./Tour.jsx";
+
+// Keyed by user id rather than a single flag: a demo visitor is a brand-new
+// user every session, so they always get the tour, while a teacher sees it once
+// per device. Storing it server-side would survive a device change, but it is
+// not worth a migration and an endpoint for a five-card walkthrough.
+const TOUR_SEEN_PREFIX = "muendlich-tour-seen";
+
+function tourAlreadySeen(userId) {
+  try {
+    return localStorage.getItem(`${TOUR_SEEN_PREFIX}:${userId}`) === "1";
+  } catch {
+    return false; // private mode / storage disabled: show it, harmlessly again
+  }
+}
+
+function rememberTourSeen(userId) {
+  try {
+    localStorage.setItem(`${TOUR_SEEN_PREFIX}:${userId}`, "1");
+  } catch {
+    /* nothing to do — the tour is skippable either way */
+  }
+}
 
 export function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
@@ -25,6 +48,10 @@ export function App() {
   // skew the countdown.
   const [demoDeadline, setDemoDeadline] = useState(null);
   const [demoLeft, setDemoLeft] = useState(null);
+  // The signed-in user, as /api/me reports them. Drives the demo banner and
+  // whether the first-run tour has already been seen.
+  const [me, setMe] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
 
   // light/dark theme (persisted; initial value applied by the inline script in index.html)
   const [dark, setDark] = useState(
@@ -68,6 +95,8 @@ export function App() {
       setAuthed(false);
       setDemoDeadline(null);
       setDemoLeft(null);
+      setMe(null);
+      setTourOpen(false);
       resetCapture();
       setSection("capture");
       setNotice(message);
@@ -97,17 +126,32 @@ export function App() {
     api
       .me()
       .then((m) => {
-        if (!cancelled) {
-          setDemoDeadline(
-            m.demo ? Date.now() + m.demo_seconds_remaining * 1000 : null
-          );
-        }
+        if (cancelled) return;
+        setMe(m);
+        setDemoDeadline(
+          m.demo ? Date.now() + m.demo_seconds_remaining * 1000 : null
+        );
+        // Seeded here rather than left to the countdown effect below, so the
+        // banner renders in the same commit as everything else that depends on
+        // it. Otherwise it drops in one commit later and pushes the whole page
+        // down — under a tour that has already measured where things are.
+        setDemoLeft(m.demo ? m.demo_seconds_remaining : null);
+        // Every demo visitor is new here by construction; a teacher only on
+        // their first sign-in from this device.
+        setTourOpen(m.demo || !tourAlreadySeen(m.id));
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [authed]);
+
+  const finishTour = useCallback(() => {
+    setTourOpen(false);
+    // Demo users are deliberately not remembered: their id is gone in half an
+    // hour, and the next visitor on this browser should see the tour too.
+    if (me && !me.demo) rememberTourSeen(me.id);
+  }, [me]);
 
   // Counts down the demo banner, and signs the visitor out when it reaches zero
   // rather than waiting for the next request to fail — an idle tab should not
@@ -192,6 +236,7 @@ export function App() {
 
       <nav className="tabs">
         <button
+          data-tour="capture"
           className={section === "capture" ? "tab active" : "tab"}
           onClick={() => setSection("capture")}
         >
@@ -199,6 +244,7 @@ export function App() {
           Aufnehmen
         </button>
         <button
+          data-tour="review"
           className={section === "review" ? "tab active" : "tab"}
           onClick={() => setSection("review")}
         >
@@ -206,6 +252,7 @@ export function App() {
           Übersicht
         </button>
         <button
+          data-tour="manage"
           className={section === "manage" ? "tab active" : "tab"}
           onClick={() => setSection("manage")}
         >
@@ -223,12 +270,17 @@ export function App() {
           )}
 
           {view === "classes" && (
-            <ClassList
-              onSelect={(c) => {
-                setKlass(c);
-                setView("capture");
-              }}
-            />
+            // Wrapper rather than a hook inside ClassList: it returns a
+            // different root while loading, on error, and when empty, so this
+            // is the only node the tour can rely on being there.
+            <div data-tour="classes">
+              <ClassList
+                onSelect={(c) => {
+                  setKlass(c);
+                  setView("capture");
+                }}
+              />
+            </div>
           )}
 
           {view === "capture" && klass && (
@@ -283,6 +335,8 @@ export function App() {
       {section === "review" && <Review />}
 
       {section === "manage" && <Manage />}
+
+      {tourOpen && <Tour steps={TOUR_STEPS} onFinish={finishTour} />}
     </main>
   );
 }
