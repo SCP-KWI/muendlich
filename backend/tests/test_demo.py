@@ -268,6 +268,28 @@ def test_wrong_demo_password_does_not_lock_out_other_visitors(client, demo_on):
     )
 
 
+def test_non_ascii_demo_password_is_accepted(client, demo_on):
+    """Regression: compare_digest raises TypeError on non-ASCII str inputs.
+
+    A German demo password with an umlaut is entirely reasonable to configure,
+    and it used to 500 the login endpoint instead of signing anyone in.
+    """
+    settings.demo_password = "grüezi-mitenand-2026"
+
+    res = client.post(
+        "/api/auth/login",
+        json={"email": DEMO_EMAIL, "password": "grüezi-mitenand-2026"},
+    )
+    assert res.status_code == 200, res.text
+
+    client.cookies.clear()
+    res = client.post(
+        "/api/auth/login",
+        json={"email": DEMO_EMAIL, "password": "grüezi-mitenand-2027"},
+    )
+    assert res.status_code == 401
+
+
 def test_demo_child_accounts_cannot_be_logged_into(start_demo, client, db):
     start_demo()
     child = _demo_users(db)[0]

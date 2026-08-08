@@ -86,8 +86,14 @@ def password_matches(password: str) -> bool:
     Deliberately not argon2: the password is published, so there is nothing to
     protect against offline cracking, and running a 64 MB hash on an
     unauthenticated endpoint would hand out a memory-exhaustion lever for free.
+
+    Compared as UTF-8 bytes, not as str: compare_digest raises TypeError on a
+    str containing non-ASCII, and a German demo password with an umlaut in it is
+    an entirely reasonable thing to configure.
     """
-    return secrets.compare_digest(password, settings.demo_password)
+    return secrets.compare_digest(
+        password.encode("utf-8"), settings.demo_password.encode("utf-8")
+    )
 
 
 # ---- session lifecycle ----
