@@ -211,6 +211,25 @@ select {
   background-repeat: no-repeat; background-position: right 10px center;
   padding-right: 36px;
 }
+/* Password reveal toggle. The Material Symbols subset carries `visibility` (the
+   brand badge uses it) but not `visibility_off` — a second glyph would mean
+   regenerating the subset, as HelpButton.jsx notes. So the on-state is carried
+   by the pressed styling and the aria-label, not by a slashed eye. */
+.pw-field { position: relative; display: block; margin-top: 6px; }
+.pw-field input { margin-top: 0; padding-right: 52px; }
+.pw-toggle {
+  position: absolute; top: 0; bottom: 0; right: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; padding: 0;   /* 44px: minimum comfortable touch target */
+  background: none; border: none; border-radius: var(--r-sm);
+  color: var(--faint);
+}
+.pw-toggle:hover { color: var(--text); }
+.pw-toggle[aria-pressed="true"] {
+  color: var(--primary-ink); background: var(--primary-tint);
+}
+.pw-toggle .mi { font-size: 20px; }
+
 form button[type="submit"] {
   width: 100%; background: var(--primary); color: #fff; border: none;
   border-radius: var(--r); padding: 14px; font-weight: 600; font-size: 1rem;
