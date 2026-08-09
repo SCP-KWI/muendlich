@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app import ratelimit
 from app.auth import REFRESH_COOKIE
 from app.models import RefreshToken
+from app.routers.auth import _GENERIC_LOGIN_ERROR
 from tests.conftest import TEST_PASSWORD
 
 
@@ -28,7 +29,9 @@ def test_wrong_password_is_401_with_generic_message(client, make_user):
     )
     assert res.status_code == 401
     # Must not distinguish "no such user" from "wrong password".
-    assert res.json()["detail"] == "Invalid credentials"
+    assert res.json()["detail"] == _GENERIC_LOGIN_ERROR
+    # The UI is German; the message a teacher reads must be too.
+    assert res.json()["detail"] == "E-Mail-Adresse oder Passwort ist falsch."
 
 
 def test_unknown_email_gives_identical_response(client, make_user):

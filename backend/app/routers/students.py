@@ -128,4 +128,4 @@ def delete_alias(
                 db.delete(alias)
                 db.commit()
                 return Response(status_code=204)
-    raise HTTPException(status.HTTP_404_NOT_FOUND, "Alias not found")
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Alias nicht gefunden.")

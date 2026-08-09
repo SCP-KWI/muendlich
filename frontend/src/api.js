@@ -15,9 +15,25 @@ export function isLoggedIn() {
 
 class ApiError extends Error {
   constructor(status, detail) {
-    super(detail || `HTTP ${status}`);
+    super(detail || `Da ist etwas schiefgelaufen (Fehler ${status}).`);
     this.status = status;
   }
+}
+
+// FastAPI puts a plain string in `detail` for a raised HTTPException, but a
+// list of {loc, msg, type} objects when a request fails schema validation. Only
+// the string case was handled, so every 422 arrived as a bare "HTTP 422" — even
+// though the backend's own validators phrase them for teachers ("Note muss in
+// Halbschritten angegeben werden"). Pull the first message out of the list.
+function detailMessage(detail) {
+  if (typeof detail === "string" && detail) return detail;
+  if (Array.isArray(detail)) {
+    const first = detail.find((d) => d && typeof d.msg === "string");
+    // Pydantic v2 prefixes messages raised as ValueError from a custom
+    // validator; the prefix means nothing to a teacher.
+    if (first) return first.msg.replace(/^Value error,\s*/, "");
+  }
+  return null;
 }
 
 // Concurrent 401s must share one refresh. The backend rotates the refresh token
@@ -77,7 +93,10 @@ async function request(method, path, body, _retried = false) {
 
   if (res.status === 401 && !_retried && !path.startsWith("/api/auth/")) {
     if (await tryRefresh()) return request(method, path, body, true);
-    throw new ApiError(401, "Session expired. Please log in again.");
+    throw new ApiError(
+      401,
+      "Die Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+    );
   }
   if (!res.ok) {
     let detail;
@@ -86,7 +105,7 @@ async function request(method, path, body, _retried = false) {
     } catch {
       detail = null;
     }
-    throw new ApiError(res.status, typeof detail === "string" ? detail : null);
+    throw new ApiError(res.status, detailMessage(detail));
   }
   if (res.status === 204) return null;
   return res.json();
@@ -158,7 +177,9 @@ export async function download(path, filename, _retried = false) {
   if (res.status === 401 && !_retried && (await tryRefresh())) {
     return download(path, filename, true);
   }
-  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  if (!res.ok) {
+    throw new Error(`Der Download ist fehlgeschlagen (Fehler ${res.status}).`);
+  }
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

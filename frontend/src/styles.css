@@ -110,11 +110,74 @@ h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
 .small { font-size: .8rem; }
 .error { color: var(--err); font-weight: 500; }
 
+/* A failed request keeps the screen it happened on — see ErrorBanner.jsx. */
+.error-banner {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--err-tint); color: var(--err);
+  border: 1px solid var(--err-solid); border-radius: var(--r);
+  padding: 10px 12px; margin: 0 0 14px;
+  font-size: .9rem; line-height: 1.4; font-weight: 500;
+}
+.error-banner-text { flex: 1; }
+.error-banner-x {
+  background: none; border: none; color: inherit; flex-shrink: 0;
+  font-size: 1.2rem; line-height: 1; padding: 0 2px;
+}
+
+/* Per-field validation message, sitting directly under the offending input. */
+.field-error {
+  color: var(--err); font-size: .82rem; font-weight: 500;
+  margin: -4px 0 10px;
+}
+input.invalid, textarea.invalid, select.invalid { border-color: var(--err-solid); }
+input.invalid:focus, textarea.invalid:focus, select.invalid:focus {
+  border-color: var(--err-solid);
+  box-shadow: 0 0 0 4px var(--err-tint);
+}
+
+/* ---- Confirm dialog --------------------------------------- */
+/* Above the guided tour's spotlight layers (1000–1002). */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(0, 0, 0, .5);
+}
+.modal {
+  width: 100%; max-width: 400px;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 22px; box-shadow: var(--shadow-lg);
+}
+.modal h3 { margin: 0 0 8px; }
+.modal-message { margin: 0; font-size: .94rem; line-height: 1.45; color: var(--muted); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.modal-cancel, .modal-confirm {
+  border-radius: var(--r-sm); padding: 10px 16px; font-weight: 600; font-size: .95rem;
+}
+.modal-cancel {
+  background: var(--card); color: var(--text); border: 1px solid var(--border-strong);
+}
+.modal-cancel:hover { border-color: var(--text); }
+.modal-confirm {
+  background: var(--err-solid); color: #fff; border: 1px solid transparent;
+}
+.modal-confirm:hover { filter: brightness(1.05); }
+.modal-confirm:focus-visible, .modal-cancel:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
 /* Involuntary sign-out on the login screen: an explanation, not a failure. */
 .notice {
   background: var(--warn-tint); color: var(--warn);
   border-radius: var(--r-sm); padding: 10px 12px; margin: 0 0 14px;
   font-size: .9rem;
+}
+
+/* Unknown-route screen: the mistyped path, shown back to the visitor. */
+.card code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em;
+  background: var(--surface-2); border-radius: var(--r-sm); padding: 1px 6px;
+  word-break: break-all;
 }
 
 /* ---- Demo session ----------------------------------------- */
@@ -201,6 +264,11 @@ h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
 .help-btn:hover { color: var(--primary-ink); border-color: var(--primary); }
 .help-btn:active { transform: scale(.96); }
 .login-top { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+/* Logged out, the app used to show a name and two fields and nothing else —
+   a link from a colleague led to a page that explained nothing. */
+.login-intro { margin: -8px 0 20px; color: var(--muted); font-size: .95rem; line-height: 1.5; }
+.login-intro a { color: var(--primary-ink); font-weight: 600; }
 
 /* ---- Buttons ---------------------------------------------- */
 button { font: inherit; cursor: pointer; }
@@ -426,6 +494,13 @@ form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
   color: var(--muted); font-weight: 600; white-space: nowrap;
 }
 .score input { width: 66px; margin: 0; text-align: center; font-family: "IBM Plex Mono", monospace; }
+/* The native spin buttons sat on top of the value in a field this narrow, so a
+   saved "4.5" read as "4.:". They are no loss here: half-steps between 1 and 6
+   are quicker to type than to click, and the field keeps type="number" for the
+   numeric keypad on a phone. */
+.score input::-webkit-outer-spin-button,
+.score input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.score input { appearance: textfield; -moz-appearance: textfield; }
 
 /* ---- Management ------------------------------------------- */
 .manage-list { margin: 0 0 20px; }

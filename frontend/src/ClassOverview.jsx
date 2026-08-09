@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, download, safeFilename } from "./api.js";
+import { ErrorBanner } from "./ErrorBanner.jsx";
 
 const EMPTY_COUNTS = { positive: 0, neutral: 0, negative: 0 };
 
@@ -32,7 +33,17 @@ export function ClassOverview({ klass, onSelectStudent, onBack }) {
     };
   }, [klass.id]);
 
-  if (error) return <p className="error">{error}</p>;
+  // The load failed, so there is no class to show — but the way back has to
+  // survive it, otherwise the screen is a dead end.
+  if (error)
+    return (
+      <div>
+        <ErrorBanner message={error} />
+        <button className="link back" onClick={onBack}>
+          ← Klassen
+        </button>
+      </div>
+    );
   if (students === null || stats === null) return <p className="muted">Lade…</p>;
 
   return (

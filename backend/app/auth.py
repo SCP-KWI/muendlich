@@ -226,12 +226,15 @@ def current_user(
     except (jwt.PyJWTError, KeyError, ValueError, TypeError):
         # `from None`: the decode failure must not surface token internals.
         raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, "Invalid token"
+            status.HTTP_401_UNAUTHORIZED, "Die Sitzung ist abgelaufen. Bitte neu anmelden."
         ) from None
 
     user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Dieses Benutzerkonto existiert nicht mehr. Bitte neu anmelden.",
+        )
 
     # Checked on every request, not just on refresh, so an access token minted
     # shortly before the deadline can't outlive it.
@@ -244,7 +247,8 @@ def current_user(
         # 1s slack: `iat` is whole seconds, password_changed_at has microseconds.
         if issued_at + 1 < int(changed_at.timestamp()):
             raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Credentials changed; please log in again"
+                status.HTTP_401_UNAUTHORIZED,
+                "Die Zugangsdaten wurden geändert. Bitte neu anmelden.",
             )
 
     return user
@@ -252,5 +256,7 @@ def current_user(
 
 def require_admin(user: User = Depends(current_user)) -> User:
     if user.role != UserRole.admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin only")
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, "Nur für Administratoren zugänglich."
+        )
     return user

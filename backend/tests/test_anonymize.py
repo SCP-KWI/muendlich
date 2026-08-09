@@ -217,6 +217,94 @@ def test_names_with_trailing_digits_do_not_cross_match():
     assert "Student11" not in result.text and "Student12" not in result.text
 
 
+# ---- derived given names ----
+def _no_rufname(db, student):
+    """The real-world roster: a full name typed in, no Rufname filled out."""
+    student.short_name = None
+    db.commit()
+    return student
+
+
+def test_given_name_matches_when_only_a_full_name_is_on_file(
+    db, make_user, make_class, make_student
+):
+    """The common path: full names in the roster, first names said in class."""
+    cls = make_class(make_user("given@example.com"))
+    anna = _no_rufname(db, make_student(cls, "Anna Muster"))
+    db.refresh(cls)
+
+    roster = build_roster(cls)
+    assert roster[0]["name"] == "Anna Muster", "display name must not change"
+
+    result = anonymize("Anna hat super mitgemacht.", roster, enabled=True)
+    assert "Anna" not in result.text, result.text
+    assert result.mapping["Student1"]["student_id"] == str(anna.id)
+    assert result.mapping["Student1"]["display"] == "Anna Muster"
+
+    proposed = resolve(
+        [RawObservation(mention="Student1", text=result.text, sentiment="positive")],
+        roster,
+        result.mapping,
+        enabled=True,
+    )
+    assert proposed[0]["match"]["status"] == "matched"
+    assert proposed[0]["match"]["student_id"] == str(anna.id)
+
+
+def test_shared_given_name_is_not_auto_matched(db, make_user, make_class, make_student):
+    """Ambiguity must keep raising the off-roster prompt, not guess a pupil."""
+    cls = make_class(make_user("ambig@example.com"))
+    _no_rufname(db, make_student(cls, "Anna Muster"))
+    _no_rufname(db, make_student(cls, "Anna Berger"))
+    db.refresh(cls)
+
+    roster = build_roster(cls)
+    for entry in roster:
+        assert "Anna" not in entry["names"], entry
+
+    result = anonymize("Anna hat super mitgemacht.", roster, enabled=True)
+    # Still pseudonymized (gazetteer layer), just not attributed to a pupil.
+    assert "Anna" not in result.text, result.text
+    assert all(v["student_id"] is None for v in result.mapping.values()), result.mapping
+
+
+def test_given_name_is_added_once_when_a_rufname_already_matches(
+    db, make_user, make_class, make_student
+):
+    """make_student fills short_name — the derived part must not duplicate it."""
+    cls = make_class(make_user("dupe@example.com"))
+    make_student(cls, "Anna Muster")
+    db.refresh(cls)
+
+    names = build_roster(cls)[0]["names"]
+    assert [n.lower() for n in names].count("anna") == 1, names
+
+
+def test_given_name_is_blocked_by_another_pupils_alias(
+    db, make_user, make_class, make_student
+):
+    """A collision with an alias counts too, not just with another full name."""
+    cls = make_class(make_user("alias@example.com"))
+    _no_rufname(db, make_student(cls, "Anna Muster"))
+    make_student(cls, "Marianne Berger", aliases=["Anna"])
+    db.refresh(cls)
+
+    muster = next(r for r in build_roster(cls) if r["name"] == "Anna Muster")
+    assert "Anna" not in muster["names"], muster
+
+
+def test_surname_is_not_derived(db, make_user, make_class, make_student):
+    """Deliberate: see build_roster. Ordinary words double as German surnames."""
+    cls = make_class(make_user("surname@example.com"))
+    _no_rufname(db, make_student(cls, "Bruno Gut"))
+    db.refresh(cls)
+
+    roster = build_roster(cls)
+    assert "Gut" not in roster[0]["names"], roster[0]
+    text = "Die Klasse hat heute gut gearbeitet."
+    assert anonymize(text, roster, enabled=True).text == text
+
+
 # ---- inactive pupils ----
 def test_build_roster_excludes_inactive(db, make_user, make_class, make_student):
     user = make_user("t@example.com")

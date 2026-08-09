@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
+import { ErrorBanner } from "./ErrorBanner.jsx";
 
 export function ClassList({ onSelect }) {
   const [classes, setClasses] = useState(null);
@@ -12,7 +13,7 @@ export function ClassList({ onSelect }) {
       .catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <p className="error">{error}</p>;
+  if (error) return <ErrorBanner message={error} />;
   if (classes === null) return <p className="muted">Lade Klassen…</p>;
   if (classes.length === 0)
     return <p className="muted">Noch keine Klassen angelegt.</p>;

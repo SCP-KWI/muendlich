@@ -37,7 +37,7 @@ def _load_owned_capture(
 ) -> RawCapture:
     cap = db.get(RawCapture, capture_id)
     if cap is None or cap.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aufnahme nicht gefunden.")
     return cap
 
 
@@ -210,7 +210,7 @@ def commit_capture(
         if item.sentiment is None or item.text is None:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
-                f"{item.temp_id}: text and sentiment are required to save",
+                f"{item.temp_id}: Text und Bewertung sind zum Speichern nötig.",
             )
 
         student_id: uuid.UUID | None = None
@@ -219,13 +219,13 @@ def commit_capture(
             if item.student_id is None:
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    f"{item.temp_id}: student_id required for {item.action}",
+                    f"{item.temp_id}: Für '{item.action}' wird eine Schüler/in benötigt.",
                 )
             student = db.get(Student, item.student_id)
             if student is None or student.class_id != cap.class_id:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
-                    f"{item.temp_id}: student not in this class",
+                    f"{item.temp_id}: Diese Schüler/in gehört nicht zu dieser Klasse.",
                 )
             student_id = student.id
 
@@ -233,7 +233,7 @@ def commit_capture(
             if not item.new_student_name:
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    f"{item.temp_id}: new_student_name required",
+                    f"{item.temp_id}: Name der neuen Schüler/in fehlt.",
                 )
             student = Student(class_id=cap.class_id, full_name=item.new_student_name)
             db.add(student)

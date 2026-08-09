@@ -175,6 +175,32 @@ export function App() {
     return () => clearInterval(id);
   }, [demoDeadline, endSession]);
 
+  // The app has exactly one route; /handbuch is served by nginx and never gets
+  // here. Everything else used to land silently on the default screen, because
+  // both the SPA fallback and the service worker's navigateFallback answer any
+  // path with the app shell — a stale bookmark looked like it had worked. The
+  // status code stays 200 (that is the fallback's doing and not fixable from
+  // here), but the dead link at least says so.
+  if (!["/", "/index.html"].includes(window.location.pathname)) {
+    return (
+      <main>
+        <div className="login-top">
+          <HelpButton />
+        </div>
+        <div className="card center">
+          <h1>Seite nicht gefunden</h1>
+          <p className="muted">
+            Die Adresse <code>{window.location.pathname}</code> gibt es hier
+            nicht.
+          </p>
+          <button className="primary" onClick={() => window.location.replace("/")}>
+            Zur Startseite
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   if (checking) {
     return (
       <main>

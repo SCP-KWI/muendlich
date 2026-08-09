@@ -38,7 +38,9 @@ logger = logging.getLogger("muendlich.auth")
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
-_GENERIC_LOGIN_ERROR = "Invalid credentials"
+# Deliberately identical for an unknown address and a wrong password: a message
+# that distinguished the two would let anyone enumerate registered accounts.
+_GENERIC_LOGIN_ERROR = "E-Mail-Adresse oder Passwort ist falsch."
 
 
 def _too_many(retry_after: int) -> HTTPException:
@@ -167,7 +169,10 @@ def refresh(
     consumed = consume_refresh_token(refresh_token, db) if refresh_token else None
     if consumed is None:
         clear_refresh_cookie(response)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Die Sitzung ist abgelaufen. Bitte neu anmelden.",
+        )
 
     user, family_id = consumed
     # Rotate within the same family: the presented token was just revoked, so a

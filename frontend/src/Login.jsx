@@ -20,7 +20,7 @@ export function Login({ onLoggedIn, notice = null }) {
       setToken(access_token);
       onLoggedIn();
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Die Anmeldung ist fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -29,6 +29,18 @@ export function Login({ onLoggedIn, notice = null }) {
   return (
     <div className="card">
       <h1>muendlich</h1>
+      {/* Logged out, this screen was a name and two fields: someone opening a
+          link from a colleague had no way to tell what the tool is. There is no
+          self-registration, so this is an explanation, not a pitch. */}
+      <p className="login-intro">
+        Mündliche Beteiligung festhalten: Nach der Lektion kurz diktieren —
+        muendlich teilt den Text in einzelne Beobachtungen auf, ordnet sie den
+        Schüler/innen zu und sammelt sie über das Semester als Grundlage für die
+        mündliche Note.{" "}
+        <a href="/handbuch" target="_blank" rel="noopener">
+          Zum Handbuch
+        </a>
+      </p>
       {notice && <p className="notice">{notice}</p>}
       <form onSubmit={submit}>
         <label>

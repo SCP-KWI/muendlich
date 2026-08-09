@@ -17,7 +17,7 @@ def get_owned_class(
     revealing that another user's class exists."""
     cls = db.get(Class, class_id)
     if cls is None or cls.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Class not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Klasse nicht gefunden.")
     return cls
 
 
@@ -28,5 +28,5 @@ def get_owned_student(
 ) -> Student:
     student = db.get(Student, student_id)
     if student is None or student.class_.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Student not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Schüler/in nicht gefunden.")
     return student

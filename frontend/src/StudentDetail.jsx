@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, download, safeFilename } from "./api.js";
+import { ConfirmDialog } from "./ConfirmDialog.jsx";
+import { ErrorBanner } from "./ErrorBanner.jsx";
 
 const SENTIMENTS = [
   ["positive", "positiv"],
@@ -7,9 +9,22 @@ const SENTIMENTS = [
   ["negative", "negativ"],
 ];
 
+const SCORE_MESSAGE = "Nur ganze und halbe Noten von 1 bis 6 (z. B. 4.5).";
+
 function fmtDate(iso) {
   const [y, m, d] = iso.split("-");
   return `${d}.${m}.${y}`;
+}
+
+// The backend only accepts whole and half steps from 1 to 6. Catching that here
+// keeps a typo from turning into a 422 the teacher has to recover from.
+// An empty field is valid: it clears the grade.
+function scoreError(raw) {
+  if (raw === "") return null;
+  const v = Number(raw);
+  if (!Number.isFinite(v) || v < 1 || v > 6 || (v * 2) % 1 !== 0)
+    return SCORE_MESSAGE;
+  return null;
 }
 
 // Recomputed locally after an edit so a one-field change doesn't cost a full
@@ -32,6 +47,9 @@ function tally(timeline) {
 export function StudentDetail({ student, onBack, backLabel }) {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
+  // Keyed by observation id — the timeline renders one Note field per row.
+  const [scoreErrors, setScoreErrors] = useState({});
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const load = useCallback(() => {
     api
@@ -65,8 +83,17 @@ export function StudentDetail({ student, onBack, backLabel }) {
     }
   }
 
+  function setScoreError(id, message) {
+    setScoreErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[id] = message;
+      else delete next[id];
+      return next;
+    });
+  }
+
   async function remove(id) {
-    if (!confirm("Diese Beobachtung löschen?")) return;
+    setPendingDelete(null);
     setError(null);
     try {
       await api.deleteObservation(id);
@@ -77,7 +104,17 @@ export function StudentDetail({ student, onBack, backLabel }) {
     }
   }
 
-  if (error) return <p className="error">{error}</p>;
+  // A failed initial load leaves nothing to render, so the error has to be the
+  // screen — but with a way out, or the teacher is stranded here.
+  if (summary === null && error)
+    return (
+      <div>
+        <ErrorBanner message={error} />
+        <button className="link back" onClick={onBack}>
+          ← {backLabel}
+        </button>
+      </div>
+    );
   if (summary === null) return <p className="muted">Lade…</p>;
 
   const { counts } = summary;
@@ -85,6 +122,7 @@ export function StudentDetail({ student, onBack, backLabel }) {
 
   return (
     <div>
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
       <button className="link back" onClick={onBack}>
         ← {backLabel}
       </button>
@@ -154,7 +192,7 @@ export function StudentDetail({ student, onBack, backLabel }) {
           <li key={o.id} className={`obs-item status-sent-${o.sentiment}`}>
             <div className="obs-meta">
               <span className="muted">{fmtDate(o.lesson_date)}</span>
-              <button className="del" onClick={() => remove(o.id)}>
+              <button className="del" onClick={() => setPendingDelete(o)}>
                 löschen
               </button>
             </div>
@@ -186,18 +224,44 @@ export function StudentDetail({ student, onBack, backLabel }) {
                   min="1"
                   max="6"
                   step="0.5"
+                  className={scoreErrors[o.id] ? "invalid" : undefined}
                   defaultValue={o.manual_score ?? ""}
                   onBlur={(e) => {
-                    const v =
-                      e.target.value === "" ? null : Number(e.target.value);
+                    const raw = e.target.value;
+                    // A number input hands back an empty string for anything it
+                    // cannot parse — "4,3" off a German keyboard, say — which
+                    // would otherwise read as "clear the grade" and silently
+                    // drop the one that was there.
+                    const message = e.target.validity.badInput
+                      ? SCORE_MESSAGE
+                      : scoreError(raw);
+                    setScoreError(o.id, message);
+                    // Leave the rejected value in the field so it can be fixed
+                    // rather than retyped from memory.
+                    if (message) return;
+                    const v = raw === "" ? null : Number(raw);
                     if (v !== o.manual_score) save(o.id, { manual_score: v });
                   }}
                 />
               </label>
             </div>
+            {scoreErrors[o.id] && (
+              <p className="field-error">{scoreErrors[o.id]}</p>
+            )}
           </li>
         ))}
       </ul>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Beobachtung löschen?"
+          message={`Die Beobachtung vom ${fmtDate(
+            pendingDelete.lesson_date
+          )} wird endgültig gelöscht.`}
+          onConfirm={() => remove(pendingDelete.id)}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

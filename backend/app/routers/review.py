@@ -35,7 +35,7 @@ def _get_owned_observation(
         cls = db.get(Class, obs.class_id)
         if cls is not None and cls.user_id == user.id:
             return obs
-    raise HTTPException(status.HTTP_404_NOT_FOUND, "Observation not found")
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Beobachtung nicht gefunden.")
 
 
 # ---- per-student views ----
@@ -172,7 +172,8 @@ def update_observation(
         student = db.get(Student, patch["student_id"])
         if student is None or student.class_id != obs.class_id:
             raise HTTPException(
-                status.HTTP_404_NOT_FOUND, "student not in this class"
+                status.HTTP_404_NOT_FOUND,
+                "Diese Schüler/in gehört nicht zu dieser Klasse.",
             )
 
     for field, value in patch.items():
