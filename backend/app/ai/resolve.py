@@ -13,31 +13,45 @@ from .structurer import RawObservation
 # Thresholds on a 0..100 similarity scale.
 _MATCH = 88.0
 _LOW = 60.0
+# A second pupil scoring this close to the winner makes the winner an accident
+# of roster order ("Anna" scores 90 against both "Anna Muster" and "Anna
+# Berger"), so the teacher has to decide instead of us.
+_TIE_MARGIN = 2.0
 
 
-def _best_roster_match(mention: str, roster: list[dict]) -> tuple[dict | None, float]:
+def _best_roster_match(mention: str, roster: list[dict]) -> tuple[dict | None, float, bool]:
+    """Returns (best entry, its score, whether another pupil ties it)."""
     best: dict | None = None
     best_score = 0.0
+    runner_up = 0.0
     for entry in roster:
-        for name in entry["names"]:
-            score = fuzz.WRatio(mention.lower(), name.lower())
-            if score > best_score:
-                best_score, best = score, entry
-    return best, best_score
+        score = max(
+            (fuzz.WRatio(mention.lower(), name.lower()) for name in entry["names"]),
+            default=0.0,
+        )
+        if score > best_score:
+            best_score, best, runner_up = score, entry, best_score
+        elif score > runner_up:
+            runner_up = score
+    ambiguous = best is not None and runner_up > 0 and best_score - runner_up <= _TIE_MARGIN
+    return best, best_score, ambiguous
 
 
 def _resolve_phase1(mention: str, roster: list[dict]) -> dict:
-    entry, score = _best_roster_match(mention, roster)
+    entry, score, ambiguous = _best_roster_match(mention, roster)
     conf = round(score / 100.0, 2)
-    if entry and score >= _MATCH:
+    if entry and score >= _MATCH and not ambiguous:
         status = "matched"
     elif entry and score >= _LOW:
         status = "low_confidence"
     else:
         status = "off_roster"
+    # Name a pupil only when one clearly won: a tie-break by roster order would
+    # look like a confident answer on the review screen.
+    resolved = entry is not None and status != "off_roster" and not ambiguous
     return {
-        "student_id": entry["student_id"] if entry and status != "off_roster" else None,
-        "student_name": entry["name"] if entry and status != "off_roster" else None,
+        "student_id": entry["student_id"] if resolved else None,
+        "student_name": entry["name"] if resolved else None,
         "confidence": conf,
         "status": status,
     }

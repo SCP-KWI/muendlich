@@ -152,6 +152,68 @@ def test_phase1_resolution_without_anonymization(roster):
     assert proposed[0]["match"]["student_id"] == "s-anna"
 
 
+_TWO_ANNAS = [
+    {"student_id": "a", "name": "Anna Muster", "names": ["Anna Muster"]},
+    {"student_id": "b", "name": "Anna Berger", "names": ["Anna Berger"]},
+]
+
+
+@pytest.mark.parametrize("order", [_TWO_ANNAS, _TWO_ANNAS[::-1]])
+def test_ambiguous_given_name_is_not_resolved_by_roster_order(order):
+    """Two pupils sharing a given name must reach the teacher, not a coin flip.
+
+    Both score 90 against "Anna", clearing the match threshold, so whichever
+    the roster listed first used to win silently.
+    """
+    proposed = resolve(
+        [RawObservation(mention="Anna", text="Anna war gut.", sentiment="positive")],
+        order,
+        mapping={},
+        enabled=False,
+    )
+    match = proposed[0]["match"]
+    assert match["status"] == "low_confidence"
+    assert match["student_id"] is None
+    assert match["student_name"] is None
+    # The review screen shows what was said, not a guessed pupil.
+    assert proposed[0]["mention"] == "Anna"
+
+
+def test_ambiguity_also_downgrades_the_anonymizer_fallback():
+    """The same guard applies when a name escaped the anonymizer."""
+    proposed = resolve(
+        [RawObservation(mention="Anna", text="Anna war gut.", sentiment="positive")],
+        _TWO_ANNAS,
+        mapping={
+            "Student1": {
+                "student_id": "b",
+                "restore": "Anna Berger",
+                "display": "Anna Berger",
+                "source": "roster",
+            }
+        },
+        enabled=True,
+    )
+    assert proposed[0]["match"]["status"] == "low_confidence"
+    assert proposed[0]["match"]["student_id"] is None
+
+
+def test_full_name_still_matches_despite_a_shared_given_name():
+    """The tie guard must not block a mention that names one pupil outright."""
+    proposed = resolve(
+        [
+            RawObservation(
+                mention="Anna Berger", text="Anna Berger war gut.", sentiment="positive"
+            )
+        ],
+        _TWO_ANNAS,
+        mapping={},
+        enabled=False,
+    )
+    assert proposed[0]["match"]["status"] == "matched"
+    assert proposed[0]["match"]["student_id"] == "b"
+
+
 def test_unknown_mention_is_off_roster(roster):
     proposed = resolve(
         [RawObservation(mention="Xaver", text="Xaver war gut.", sentiment="neutral")],

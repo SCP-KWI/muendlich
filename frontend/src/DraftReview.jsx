@@ -18,9 +18,13 @@ function initItem(p) {
     status: st,
     confidence: p.match.confidence,
     student_name: p.match.student_name,
+    // An ambiguous mention comes back low_confidence with no pupil attached —
+    // open the picker rather than offering a "save" the backend would reject.
     action:
       st === "matched" || st === "low_confidence"
-        ? "save"
+        ? p.match.student_id
+          ? "save"
+          : "map_existing"
         : st === "off_roster"
           ? "create_student"
           : "unassigned",
@@ -154,11 +158,12 @@ export function DraftReview({ klass, draft, onDone }) {
                 value={i.action}
                 onChange={(e) => update(i.temp_id, { action: e.target.value })}
               >
-                {(i.status === "matched" || i.status === "low_confidence") && (
-                  <option value="save">
-                    Speichern{i.student_name ? ` (${i.student_name})` : ""}
-                  </option>
-                )}
+                {(i.status === "matched" || i.status === "low_confidence") &&
+                  i.student_id && (
+                    <option value="save">
+                      Speichern{i.student_name ? ` (${i.student_name})` : ""}
+                    </option>
+                  )}
                 <option value="create_student">Als neue/n Schüler/in</option>
                 <option value="map_existing">Zuordnen zu…</option>
                 <option value="unassigned">Ohne Zuordnung</option>
