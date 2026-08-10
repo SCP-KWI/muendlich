@@ -306,11 +306,12 @@ footer {
     <li><span class="num">5</span><a href="#sus">Schüler/innen erfassen</a></li>
     <li><span class="num">6</span><a href="#aufnahme">Aufnahme machen</a></li>
     <li><span class="num">7</span><a href="#cloud">Prüfen, was an die KI ging</a></li>
-    <li><span class="num">8</span><a href="#pruefen">Zuweisungen prüfen</a></li>
-    <li><span class="num">9</span><a href="#uebersicht">Übersicht &amp; bewerten</a></li>
-    <li><span class="num">10</span><a href="#export">Exportieren</a></li>
-    <li><span class="num">11</span><a href="#tipps">Tipps aus dem Alltag</a></li>
-    <li><span class="num">12</span><a href="#faq">Wenn etwas klemmt</a></li>
+    <li><span class="num">8</span><a href="#namen">Wie die Namen erkannt werden</a></li>
+    <li><span class="num">9</span><a href="#pruefen">Zuweisungen prüfen</a></li>
+    <li><span class="num">10</span><a href="#uebersicht">Übersicht &amp; bewerten</a></li>
+    <li><span class="num">11</span><a href="#export">Exportieren</a></li>
+    <li><span class="num">12</span><a href="#tipps">Tipps aus dem Alltag</a></li>
+    <li><span class="num">13</span><a href="#faq">Wenn etwas klemmt</a></li>
   </ol>
 </nav>
 
@@ -520,8 +521,46 @@ footer {
 </section>
 
 <!-- ==================================================================== -->
+<section id="namen">
+<h2><span class="num">8</span>Wie die Namen erkannt werden</h2>
+<p class="sub">Warum meistens alles stimmt — und woran du merkst, wenn nicht.</p>
+
+<p>Bevor irgendetwas das Haus verlässt, sucht der Server im diktierten Text nach Namen. Er tut das in drei Durchgängen, in dieser Reihenfolge:</p>
+
+<ol class="legend">
+  <li><strong>Deine Klassenliste.</strong> Alles, was unter <span class="ui">Verwalten</span> erfasst ist — vollständiger Name, Rufname, Spitznamen — wird zu <em>Student1</em>, <em>Student2</em> … Nur diese Platzhalter kann die App später einer Person in deiner Klasse zuordnen.</li>
+  <li><strong>Eine Liste gängiger Vornamen.</strong> Fängt Namen ab, die nicht in deiner Klasse stehen: die Austauschschülerin, ein Geschwister, die Kollegin von nebenan. Wird zu <em>Person1</em>.</li>
+  <li><strong>Sprachverständnis für den Rest.</strong> Erkennt Namen und Orte, die in keiner Liste stehen. Wird zu <em>Person1</em> bzw. <em>Ort1</em>.</li>
+</ol>
+
+<h3>Schreibweisen sind egal, ähnliche Namen nicht</h3>
+
+<p>Die Spracherkennung schreibt Namen selten so, wie sie in deiner Klassenliste stehen. Die App gleicht deshalb auch nach Klang ab: <em>Marko</em> findet <em>Marco</em>, <em>Sofie</em> findet <em>Sophie</em>, <em>Kolin</em> findet <em>Colin</em>. Dafür musst du nichts tun.</p>
+
+<p>Was sie bewusst <strong>nicht</strong> tut: aus einem längeren Namen einen kürzeren heraushören. <em>Hannah</em> wird nicht zu <em>Anna</em>, <em>Annabelle</em> nicht zu <em>Anna</em>, <em>Timothy</em> nicht zu <em>Timo</em>. Solche Namen kommen im Prüfen-Schritt als <span class="ui">nicht auf der Liste</span> an — die Entscheidung liegt bei dir, nicht bei der App.</p>
+
+<div class="note warn">
+  <span class="label">Wo die Erkennung an Grenzen stösst</span>
+  <p><strong>Nachnamen werden nicht erkannt.</strong> „Muster hat gestört“ findet niemanden. Sag Vornamen — darauf ist die Erkennung ausgelegt.<br>
+  <strong>Kurze Rufnamen nur exakt.</strong> Namen mit drei Buchstaben oder weniger (<em>Bea</em>, <em>Kim</em>, <em>Tim</em>) werden nur bei genauer Schreibweise gefunden. Sonst würde aus jedem „bei“ und jedem „nur“ ein Kind.<br>
+  <strong>Sehr ähnliche Namen in derselben Klasse</strong> — etwa <em>Sophia</em> und <em>Sophie</em> — kann die App nicht zuverlässig auseinanderhalten. Solche Karten lohnt es sich genauer anzuschauen.<br>
+  <strong>Zwei gleiche Vornamen</strong> in einer Klasse: „Anna“ allein wird dann keiner der beiden zugeordnet, sondern kommt als <span class="ui">nicht auf der Liste</span> an. Sag in dem Fall beide Namen.</p>
+</div>
+
+<div class="note ok">
+  <span class="label">Was am meisten hilft</span>
+  <p><strong>Spitznamen pflegen.</strong> Jeder Name, unter dem du eine Person tatsächlich ansprichst, gehört unter <span class="ui">Verwalten</span> zu ihr. Das ist mit Abstand der grösste Hebel — jeder erfasste Spitzname ist eine Nachfrage weniger.<br>
+  <strong>Vornamen sagen, nicht Nachnamen.</strong><br>
+  <strong>Bei gleichen Vornamen den ganzen Namen sagen</strong> — „Anna Muster hat …“.<br>
+  <strong>Einmal nachschauen, was rausging.</strong> Der Kasten aus <a href="#cloud">Abschnitt 7</a> zeigt es wörtlich. Ein einziger Blick reicht, um Vertrauen zu fassen oder es zu verlieren.</p>
+</div>
+
+<p style="font-size:.9rem">Und die Einschränkung, die keine Technik löst: Die Namen gehen nicht raus, der <em>Inhalt</em> schon. „Der Junge, der sich den Arm gebrochen hat“ benennt eine Person auch ohne Namen — siehe <a href="#cloud">Abschnitt 7</a>.</p>
+</section>
+
+<!-- ==================================================================== -->
 <section id="pruefen">
-<h2><span class="num">8</span>Zuweisungen prüfen</h2>
+<h2><span class="num">9</span>Zuweisungen prüfen</h2>
 <p class="sub">Der einzige Schritt, der wirklich deine Aufmerksamkeit braucht. Er dauert etwa zwanzig Sekunden.</p>
 
 <p>Oben steht, wie viele Beobachtungen erkannt wurden und wie viele davon <em>zu klären</em> sind. Sind es null, kannst du direkt auf <span class="ui">Speichern</span>.</p>
@@ -556,13 +595,13 @@ footer {
 
 <!-- ==================================================================== -->
 <section id="uebersicht">
-<h2><span class="num">9</span>Übersicht &amp; bewerten</h2>
+<h2><span class="num">10</span>Übersicht &amp; bewerten</h2>
 <p class="sub">Am Computer, wenn du Zeit hast. Reiter <span class="ui">Übersicht</span>.</p>
 
 <h3>Die Klasse auf einen Blick</h3>
 {{FIG:uebersicht}}
 <ol class="legend">
-  <li><span class="ui">CSV</span> und <span class="ui">PDF</span> exportieren die ganze Klasse (siehe <a href="#export">Abschnitt 10</a>).</li>
+  <li><span class="ui">CSV</span> und <span class="ui">PDF</span> exportieren die ganze Klasse (siehe <a href="#export">Abschnitt 11</a>).</li>
   <li>Eine Person anklicken öffnet ihre Zeitleiste.</li>
   <li>Die Zähler: <strong>grün positiv, grau neutral, rot negativ</strong>. Hier siehst du auf einen Blick auch, wen du das ganze Semester über nie erwähnt hast — meist die stillen Personen in der dritten Reihe, und das ist beim Notensetzen die nützlichste Information dieses Bildschirms.</li>
 </ol>
@@ -586,7 +625,7 @@ footer {
 
 <!-- ==================================================================== -->
 <section id="export">
-<h2><span class="num">10</span>Exportieren</h2>
+<h2><span class="num">11</span>Exportieren</h2>
 <p class="sub">Für die Notenkonferenz, das Elterngespräch oder das Archiv.</p>
 
 <p>Auf jeder Klassen- und Personenseite liegen oben die beiden Knöpfe <span class="ui">⭳ CSV</span> und <span class="ui">⭳ PDF</span>.</p>
@@ -599,7 +638,7 @@ footer {
 
 <!-- ==================================================================== -->
 <section id="tipps">
-<h2><span class="num">11</span>Tipps aus dem Alltag</h2>
+<h2><span class="num">12</span>Tipps aus dem Alltag</h2>
 
 <ul>
   <li><strong>Sofort oder gar nicht.</strong> Der Nutzen der App steht und fällt damit, dass du in den zwei Minuten nach der Lektion diktierst. Nach dem Mittagessen erinnerst du dich nur noch an die Ausreisser.</li>
@@ -612,7 +651,7 @@ footer {
 
 <!-- ==================================================================== -->
 <section id="faq">
-<h2><span class="num">12</span>Wenn etwas klemmt</h2>
+<h2><span class="num">13</span>Wenn etwas klemmt</h2>
 
 <details class="faq">
   <summary>Die Spracherkennung schreibt Namen falsch.</summary>
