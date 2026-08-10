@@ -6,13 +6,13 @@ restore the real names locally (they never reached the cloud).
 """
 import re
 
-from rapidfuzz import fuzz
-
-from .anonymize import MIN_FUZZY_LEN
+from . import namematch
 from .gazetteer import is_first_name
 from .structurer import RawObservation
 
-# Thresholds on a 0..100 similarity scale.
+# Thresholds on a 0..100 similarity scale. namematch only ever returns 100
+# (exact), 90 (a spelling variant it vouched for) or 0, so _LOW is now reached
+# only by the ambiguity path below — two pupils the mention fits equally well.
 _MATCH = 88.0
 _LOW = 60.0
 # A second pupil scoring this close to the winner makes the winner an accident
@@ -22,33 +22,28 @@ _TIE_MARGIN = 2.0
 
 
 def _best_roster_match(mention: str, roster: list[dict]) -> tuple[dict | None, float, bool]:
-    """Returns (best entry, its score, whether another pupil ties it)."""
-    # Same collision the anonymizer guards against, and worse here: WRatio does
-    # partial matching, so a short ordinary word scores 90 against the name it
-    # prefixes ("an"/"Anna", "nur"/"Nuri") and clears the *match* threshold — a
-    # confident attribution the draft screen offers to save. Only approximate
-    # matching is blocked; an exact hit still resolves at any length, and the
-    # loop below keeps its own tie handling for pupils sharing a given name.
-    lowered = mention.lower()
-    exact = any(
-        lowered == name.lower() for entry in roster for name in entry["names"]
-    )
-    if not exact and len(lowered) < MIN_FUZZY_LEN:
-        return None, 0.0, False
+    """Returns (best entry, its score, whether another pupil ties it).
 
+    Scored by namematch rather than a raw similarity. The previous scorer was
+    fuzz.WRatio, whose partial matching returns 100 whenever a roster name is a
+    *substring* of what was said — so "Hannah" scored 90 against "Anna" and was
+    filed against her with confidence, as were "Annabelle", "Marcolina" and
+    "Colinda" against their respective pupils.
+    """
     best: dict | None = None
-    best_score = 0.0
-    runner_up = 0.0
+    best_score = namematch.NO_MATCH
+    runner_up = namematch.NO_MATCH
     for entry in roster:
-        score = max(
-            (fuzz.WRatio(mention.lower(), name.lower()) for name in entry["names"]),
-            default=0.0,
-        )
+        score = namematch.best(mention, entry["names"], given_name=True)
         if score > best_score:
             best_score, best, runner_up = score, entry, best_score
         elif score > runner_up:
             runner_up = score
-    ambiguous = best is not None and runner_up > 0 and best_score - runner_up <= _TIE_MARGIN
+
+    if best_score == namematch.NO_MATCH:
+        return None, 0.0, False
+
+    ambiguous = runner_up > 0 and best_score - runner_up <= _TIE_MARGIN
     return best, best_score, ambiguous
 
 
@@ -152,7 +147,12 @@ def resolve(
     for i, obs in enumerate(observations, start=1):
         mention = obs["mention"].strip()
 
-        if enabled and mapping:
+        # `enabled` alone, not `enabled and mapping`: a dictation in which the
+        # anonymizer recognised no name at all still ran under anonymization, so
+        # the reasoning below still holds — and an empty mapping used to route
+        # those captures down the un-anonymized branch, where a made-up mention
+        # was offered as a new pupil instead of being left unassigned.
+        if enabled:
             text = _restore_text(obs["text"], mapping)
             entry = norm_map.get(mention.replace(" ", "").lower())
             if entry is not None:

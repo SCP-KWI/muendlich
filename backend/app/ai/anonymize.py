@@ -20,11 +20,9 @@ import re
 import threading
 from dataclasses import dataclass, field
 
-from rapidfuzz import fuzz
-
 from ..config import settings
+from . import namematch
 from .gazetteer import is_first_name
-from .kophon import koelner_phonetik
 
 logger = logging.getLogger("muendlich.anonymize")
 
@@ -34,22 +32,8 @@ logger = logging.getLogger("muendlich.anonymize")
 # and left the digit stranded next to the placeholder ("Student1" + "1").
 _WORD = re.compile(r"[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß0-9'\-]*")
 
-_FUZZY_MIN = 84      # rapidfuzz ratio required for a fuzzy roster match
-_PHON_FUZZY_MIN = 60  # lower bar when the phonetic code also matches
-
-# Approximate matching needs a token long enough to be distinctive. Below this,
-# ordinary German words collide with real first names and get rewritten into a
-# pupil placeholder: "an"/"Anna", "nur"/"Nuri", "bei"/"Bea" all cleared the bar,
-# because Kölner Phonetik yields the same code for a short word as for the name
-# it is a prefix of, which drops the required ratio to _PHON_FUZZY_MIN.
-#
-# The damage was silent and it reached the saved record: "Anna war in Zürich an
-# der Exkursion" came back restored as "Anna war in Zürich Anna der Exkursion".
-#
-# 4 is measured, not guessed — at 3 "nur" and "bei" still matched, and at 5 the
-# real alias "Anni" stopped resolving to Anna. Exact matches bypass this at any
-# length, so a pupil actually called "Bo" is unaffected.
-MIN_FUZZY_LEN = 4
+# Whether two spellings are the same name is decided in one place, so that the
+# anonymizer and the resolver cannot drift apart about it. See namematch.py.
 
 # spaCy entity labels we replace, and the placeholder family each maps to.
 _PERSON_LABELS = frozenset({"PER", "PERSON"})
@@ -83,7 +67,6 @@ def _roster_index(roster: list[dict]) -> tuple[list[dict], dict[str, dict]]:
             idx.append(
                 {
                     "norm": nm.lower(),
-                    "phon": koelner_phonetik(nm),
                     "student_id": r["student_id"],
                     "full": full,
                     "short": short,
@@ -98,19 +81,13 @@ def _match_roster(token: str, idx: list[dict], exact: dict[str, dict]) -> dict |
     if (hit := exact.get(t)) is not None:
         return hit
 
-    if len(t) < MIN_FUZZY_LEN:
-        return None
-
-    tp = koelner_phonetik(token)
-    best = None
-    best_score = 0.0
+    best_entry = None
+    best_score = namematch.NO_MATCH
     for e in idx:
-        score = fuzz.ratio(t, e["norm"])
-        phon_ok = bool(tp) and tp == e["phon"]
-        ok = score >= _FUZZY_MIN or (phon_ok and score >= _PHON_FUZZY_MIN)
-        if ok and score > best_score:
-            best_score, best = score, e
-    return best
+        s = namematch.score(token, e["norm"])
+        if s > best_score:
+            best_score, best_entry = s, e
+    return best_entry
 
 
 # ---- spaCy NER (lazy, optional) ----
