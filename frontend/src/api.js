@@ -14,9 +14,13 @@ export function isLoggedIn() {
 }
 
 class ApiError extends Error {
-  constructor(status, detail) {
+  // `code` is set when the backend sends a structured detail ({code, message}),
+  // which it does for errors the UI has to *react* to rather than merely
+  // display — a duplicate class name it can offer to override, say.
+  constructor(status, detail, code = null) {
     super(detail || `Da ist etwas schiefgelaufen (Fehler ${status}).`);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -27,6 +31,10 @@ class ApiError extends Error {
 // Halbschritten angegeben werden"). Pull the first message out of the list.
 function detailMessage(detail) {
   if (typeof detail === "string" && detail) return detail;
+  // A structured detail the UI can branch on: {code, message}.
+  if (detail && !Array.isArray(detail) && typeof detail.message === "string") {
+    return detail.message;
+  }
   if (Array.isArray(detail)) {
     const first = detail.find((d) => d && typeof d.msg === "string");
     // Pydantic v2 prefixes messages raised as ValueError from a custom
@@ -105,7 +113,11 @@ async function request(method, path, body, _retried = false) {
     } catch {
       detail = null;
     }
-    throw new ApiError(res.status, detailMessage(detail));
+    const code =
+      detail && !Array.isArray(detail) && typeof detail.code === "string"
+        ? detail.code
+        : null;
+    throw new ApiError(res.status, detailMessage(detail), code);
   }
   if (res.status === 204) return null;
   return res.json();

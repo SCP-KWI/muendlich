@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
 import { ConfirmDialog } from "./ConfirmDialog.jsx";
 import { ErrorBanner } from "./ErrorBanner.jsx";
@@ -14,6 +14,15 @@ export function ManageClasses({ onOpenClass }) {
   // A second tap on the submit button — trivially easy on a touchscreen — used
   // to fire a second POST and create the class twice.
   const [busy, setBusy] = useState(false);
+  // `busy` disables the button, but only from the *next* render: a fast double
+  // tap lands both clicks before React commits that, and both POST. A ref flips
+  // synchronously inside the handler, which is the only thing the second click
+  // can see. (The backend's duplicate check below is the real safety net; this
+  // stops the request being made at all.)
+  const submitting = useRef(false);
+  // Set when the backend reports an existing class of the same name, holding
+  // the payload so confirming can re-send it verbatim.
+  const [duplicate, setDuplicate] = useState(null);
   // An empty name field used to abort the submit silently; the browser's red
   // outline was the only hint, and screen readers got nothing at all.
   const [nameError, setNameError] = useState(null);
@@ -27,28 +36,41 @@ export function ManageClasses({ onOpenClass }) {
   }
   useEffect(load, []);
 
+  async function submitClass(payload) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setError(null);
+    setBusy(true);
+    try {
+      await api.createClass(payload);
+      setForm(EMPTY);
+      setDuplicate(null);
+      load();
+    } catch (err) {
+      if (err.code === "duplicate_class_name") {
+        // Not an error the teacher can act on by reading it — offer the choice.
+        setDuplicate({ payload, message: err.message });
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
+  }
+
   async function create(e) {
     e.preventDefault();
     if (!form.name.trim()) {
       setNameError(NAME_REQUIRED);
       return;
     }
-    setError(null);
-    setBusy(true);
-    try {
-      await api.createClass({
-        name: form.name.trim(),
-        subject: form.subject.trim() || null,
-        semester: form.semester.trim() || null,
-        school_year: form.school_year.trim() || null,
-      });
-      setForm(EMPTY);
-      load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
+    await submitClass({
+      name: form.name.trim(),
+      subject: form.subject.trim() || null,
+      semester: form.semester.trim() || null,
+      school_year: form.school_year.trim() || null,
+    });
   }
 
   async function save(id, patch) {
@@ -172,6 +194,18 @@ export function ManageClasses({ onOpenClass }) {
           message={`Klasse „${pendingDelete.name}“ und alle zugehörigen Beobachtungen löschen?`}
           onConfirm={() => remove(pendingDelete)}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {duplicate && (
+        <ConfirmDialog
+          title="Klasse doppelt anlegen?"
+          message={duplicate.message}
+          confirmLabel="Trotzdem anlegen"
+          onConfirm={() =>
+            submitClass({ ...duplicate.payload, allow_duplicate: true })
+          }
+          onCancel={() => setDuplicate(null)}
         />
       )}
     </div>

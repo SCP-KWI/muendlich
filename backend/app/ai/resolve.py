@@ -8,6 +8,8 @@ import re
 
 from rapidfuzz import fuzz
 
+from .anonymize import MIN_FUZZY_LEN
+from .gazetteer import is_first_name
 from .structurer import RawObservation
 
 # Thresholds on a 0..100 similarity scale.
@@ -21,6 +23,19 @@ _TIE_MARGIN = 2.0
 
 def _best_roster_match(mention: str, roster: list[dict]) -> tuple[dict | None, float, bool]:
     """Returns (best entry, its score, whether another pupil ties it)."""
+    # Same collision the anonymizer guards against, and worse here: WRatio does
+    # partial matching, so a short ordinary word scores 90 against the name it
+    # prefixes ("an"/"Anna", "nur"/"Nuri") and clears the *match* threshold — a
+    # confident attribution the draft screen offers to save. Only approximate
+    # matching is blocked; an exact hit still resolves at any length, and the
+    # loop below keeps its own tie handling for pupils sharing a given name.
+    lowered = mention.lower()
+    exact = any(
+        lowered == name.lower() for entry in roster for name in entry["names"]
+    )
+    if not exact and len(lowered) < MIN_FUZZY_LEN:
+        return None, 0.0, False
+
     best: dict | None = None
     best_score = 0.0
     runner_up = 0.0
@@ -57,6 +72,62 @@ def _resolve_phase1(mention: str, roster: list[dict]) -> dict:
     }
 
 
+def _from_mapping(entry: dict) -> tuple[dict, str]:
+    """Turn an anonymizer mapping entry into a match. Returns (match, display).
+
+    The anonymizer is deliberately trigger-happy — replacing a word that only
+    might be a name costs nothing, and that is the right bias for a privacy
+    control. Proposing that word as a new pupil is a different decision, and it
+    needs a higher bar. This is where the two part company.
+    """
+    sid = entry["student_id"]
+    if sid:
+        return (
+            {
+                "student_id": sid,
+                "student_name": entry["display"],
+                "confidence": 1.0,
+                "status": "matched",
+            },
+            entry["display"],
+        )
+
+    surface = entry["display"]
+
+    # Two ways a placeholder can turn out not to be a pupil at all:
+    #
+    #   * it is a place. LOC/ORG/GPE spans become Ort{n}, and the structurer
+    #     sometimes attributes an observation to one ("Ort1 war laut").
+    #   * NER tags any capitalized token that reads like a name, so a
+    #     capitalized ordinary word ("Brilliant", "Souverän") arrives looking
+    #     exactly like a real off-roster classmate. A lone token that no
+    #     first-name list recognises is the suspicious shape. Multi-token spans
+    #     ("Yannick Weber") still look like names and keep the benefit of the
+    #     doubt, as do names the gazetteer knows.
+    #
+    # Both come back unassigned rather than low_confidence: a low_confidence
+    # match with no pupil attached opens the "Zuordnen zu…" picker, which the
+    # commit endpoint rejects unless the teacher picks someone. That is the right
+    # prompt for a genuinely ambiguous *name*, and a dead end for a word that was
+    # never a name. Unassigned keeps the text, claims nothing, and still lets the
+    # teacher assign or discard it by hand.
+    not_a_person = entry.get("kind") == "place" or (
+        entry.get("source") == "ner"
+        and len(surface.split()) == 1
+        and not is_first_name(surface)
+    )
+
+    return (
+        {
+            "student_id": None,
+            "student_name": None,
+            "confidence": 0.0 if not_a_person else 1.0,
+            "status": "unassigned" if not_a_person else "off_roster",
+        },
+        surface,
+    )
+
+
 def _restore_text(text: str, mapping: dict[str, dict]) -> str:
     # Replace each placeholder with the real name, longest keys first so that
     # Student1 doesn't clobber Student10.
@@ -85,18 +156,18 @@ def resolve(
             text = _restore_text(obs["text"], mapping)
             entry = norm_map.get(mention.replace(" ", "").lower())
             if entry is not None:
-                sid = entry["student_id"]
-                match = {
-                    "student_id": sid,
-                    "student_name": entry["display"] if sid else None,
-                    "confidence": 1.0,
-                    "status": "matched" if sid else "off_roster",
-                }
-                display = entry["display"]
+                match, display = _from_mapping(entry)
             else:
                 # Anonymizer missed this name — fall back to fuzzy roster match.
                 match = _resolve_phase1(mention, roster)
                 display = match["student_name"] or mention
+                if match["status"] == "off_roster":
+                    # With anonymization on, every person the pipeline recognised
+                    # became a placeholder. A mention that is neither a
+                    # placeholder nor a roster name therefore has nothing behind
+                    # it — most likely the structurer read an ordinary word as a
+                    # name. Keep the text, drop the claim that it is a pupil.
+                    match = {**match, "status": "unassigned", "confidence": 0.0}
         else:
             text = obs["text"]
             match = _resolve_phase1(mention, roster)

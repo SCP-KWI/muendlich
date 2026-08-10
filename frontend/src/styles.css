@@ -373,6 +373,8 @@ form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
   color: var(--faint); position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
 }
 .class-name { font-weight: 600; font-size: 1.05rem; }
+/* Second line: what tells two same-named classes apart. */
+.class-meta { display: block; font-size: .82rem; margin-top: 3px; }
 
 /* ---- Capture ---------------------------------------------- */
 .mic {
@@ -416,10 +418,14 @@ form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
 .draft-item.status-matched { border-left-color: var(--ok-solid); }
 .draft-item.status-low_confidence,
 .draft-item.status-off_roster { border-left-color: var(--warn-solid); }
+.draft-item.status-unassigned { border-left-color: var(--neu-solid); }
 .draft-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
 .draft-head strong { font-size: 1.05rem; }
 .badge {
   font-size: .8rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  /* Neutral default, for statements of fact like "vermutlich kein Name" —
+     nothing is wrong there, so nothing should look alarming. */
+  background: var(--surface-2); color: var(--muted);
 }
 .badge.ok { background: var(--ok-tint); color: var(--ok); }
 .badge.warn { background: var(--warn-tint); color: var(--warn); }

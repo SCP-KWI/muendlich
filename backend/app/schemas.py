@@ -99,6 +99,11 @@ class ClassCreate(BaseModel):
     subject: OptionalName = None
     semester: OptionalName = None
     school_year: OptionalName = None
+    # Not a column. A second class with an existing name is legitimate (the same
+    # class next semester) but is far more often a double submit, so the first
+    # attempt is refused and the client re-sends with this set once the teacher
+    # has confirmed.
+    allow_duplicate: bool = False
 
     _strip_name = field_validator("name", mode="before")(_strip)
 
@@ -110,6 +115,14 @@ class ClassOut(BaseModel):
     subject: str | None
     semester: str | None
     school_year: str | None
+    # Shown wherever classes are listed. When two share a name this is what
+    # actually separates them — an accidental duplicate has no pupils at all,
+    # which no amount of subject/semester detail would have revealed.
+    student_count: int = 0
+    # The last-resort discriminator, for when even the counts match (two empty
+    # classes created seconds apart). The PWA only surfaces it when a name is
+    # actually duplicated, so the common case stays uncluttered.
+    created_at: dt.datetime
 
 
 class ClassUpdate(BaseModel):

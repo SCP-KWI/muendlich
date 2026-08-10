@@ -8,7 +8,7 @@ import pytest
 
 from app.ai.anonymize import anonymize
 from app.ai.pipeline import build_roster
-from app.ai.resolve import resolve
+from app.ai.resolve import _restore_text, resolve
 from app.ai.structurer import RawObservation
 
 
@@ -382,3 +382,139 @@ def test_build_roster_excludes_inactive(db, make_user, make_class, make_student)
     assert "Anna Meier" in names
     assert "Weg Gezogen" not in names
     assert active.full_name in names
+
+
+# ---- what gets proposed as a pupil ----
+# The anonymizer is deliberately trigger-happy: replacing a word that only might
+# be a name is free. Turning that word into a proposed new pupil is not, and
+# these pin down where the two decisions part company.
+def _ner_entry(surface, kind="person"):
+    """A mapping entry as the NER layer writes one."""
+    return {
+        "student_id": None,
+        "restore": surface,
+        "display": surface,
+        "source": "ner",
+        "kind": kind,
+    }
+
+
+def _proposed(mention, mapping, roster, text="… hat brilliant improvisiert."):
+    return resolve(
+        [RawObservation(mention=mention, text=text, sentiment="positive")],
+        roster,
+        mapping=mapping,
+        enabled=True,
+    )[0]
+
+
+def test_capitalized_ordinary_word_is_not_offered_as_a_new_pupil(roster):
+    """Regression: spaCy tags "Brilliant" as PER, which invented a fourth pupil.
+
+    The replacement itself is fine — a harmless word went to the cloud as a
+    placeholder. What must not happen is the draft screen proposing it as a
+    person to create.
+    """
+    got = _proposed("Person1", {"Person1": _ner_entry("Brilliant")}, roster)
+    assert got["match"]["status"] == "unassigned"
+    assert got["match"]["student_id"] is None
+    assert got["match"]["student_name"] is None
+
+
+def test_a_place_is_never_a_pupil(roster):
+    got = _proposed("Ort1", {"Ort1": _ner_entry("Zürich", kind="place")}, roster)
+    assert got["match"]["status"] == "unassigned"
+
+
+def test_a_known_first_name_is_still_offered_as_a_new_pupil(roster):
+    """The guard must not swallow real off-roster classmates."""
+    got = _proposed("Person1", {"Person1": _ner_entry("Jonas")}, roster)
+    assert got["match"]["status"] == "off_roster"
+
+
+def test_a_full_name_is_still_offered_as_a_new_pupil(roster):
+    """Two capitalized tokens look like a name whatever the gazetteer knows."""
+    got = _proposed("Person1", {"Person1": _ner_entry("Yannick Weber")}, roster)
+    assert got["match"]["status"] == "off_roster"
+
+
+def test_gazetteer_hits_keep_the_benefit_of_the_doubt(roster):
+    """The gazetteer only fires on known given names, so it is trusted."""
+    entry = {**_ner_entry("Ferdinand"), "source": "gazetteer"}
+    got = _proposed("Person1", {"Person1": entry}, roster)
+    assert got["match"]["status"] == "off_roster"
+
+
+def test_mention_that_is_neither_placeholder_nor_roster_name_is_unassigned(roster):
+    """With anonymization on, a real person would have become a placeholder.
+
+    So a mention that is neither has nothing behind it — most likely the
+    structurer read an ordinary word as a name.
+    """
+    got = _proposed(
+        "improvisiert", {"Student1": {"student_id": "s-anna", "restore": "Anna",
+                                      "display": "Anna Meier", "source": "roster",
+                                      "kind": "person"}}, roster
+    )
+    assert got["match"]["status"] == "unassigned"
+    assert got["match"]["student_id"] is None
+
+
+# ---- short ordinary words must not become pupils ----
+# Kölner Phonetik gives a short word the same code as the name it prefixes, which
+# drops the required similarity to the lower phonetic bar. "an" then matched
+# "Anna" and the replacement reached the saved text:
+#   "Anna war in Zürich an der Exkursion" -> "Anna war in Zürich Anna der Exkursion"
+_COLLIDING = [
+    ("an", "Anna"),
+    ("nur", "Nuri"),
+    ("bei", "Bea"),
+]
+
+
+@pytest.fixture
+def short_name_roster():
+    return [
+        {"student_id": "s-anna", "name": "Anna Meier", "names": ["Anna Meier", "Anna", "Anni"]},
+        {"student_id": "s-nuri", "name": "Nuri Öztürk", "names": ["Nuri Öztürk", "Nuri"]},
+        {"student_id": "s-bea", "name": "Beatrice Hunziker", "names": ["Beatrice Hunziker", "Bea"]},
+    ]
+
+
+@pytest.mark.parametrize("word,name", _COLLIDING)
+def test_short_german_word_is_not_replaced_with_a_pupil(word, name, short_name_roster):
+    result = anonymize(f"Die Klasse hat {word} der Aufgabe gearbeitet.", short_name_roster, True)
+    assert word in result.text, f"{word!r} was rewritten as a placeholder"
+    assert "Student" not in result.text
+
+
+def test_the_reported_sentence_survives_intact(short_name_roster):
+    text = "Anna war in Zürich an der Exkursion."
+    result = anonymize(text, short_name_roster, enabled=True)
+    # Anna is replaced (she is on the roster); "an" is left alone.
+    assert result.text.count("Student1") == 1
+    assert " an der Exkursion" in result.text
+    assert _restore_text(result.text, result.mapping) == text
+
+
+@pytest.mark.parametrize("word,name", _COLLIDING)
+def test_short_word_is_not_resolved_to_a_pupil_either(word, name, short_name_roster):
+    """The resolver runs on its own whenever anonymization is off."""
+    got = resolve(
+        [RawObservation(mention=word, text=f"{word} …", sentiment="neutral")],
+        short_name_roster, mapping={}, enabled=False,
+    )[0]
+    assert got["match"]["student_id"] is None
+    assert got["match"]["status"] == "off_roster"
+
+
+def test_short_names_still_match_exactly(short_name_roster):
+    """The guard is on approximate matching only — 'Bea' is a real alias."""
+    result = anonymize("Bea hat geholfen.", short_name_roster, enabled=True)
+    assert result.mapping["Student1"]["student_id"] == "s-bea"
+
+
+def test_close_variants_of_real_names_still_match(short_name_roster):
+    """'Anni' is four characters, so the guard leaves it alone."""
+    result = anonymize("Anni hat geholfen.", short_name_roster, enabled=True)
+    assert result.mapping["Student1"]["student_id"] == "s-anna"

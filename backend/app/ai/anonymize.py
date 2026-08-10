@@ -37,6 +37,20 @@ _WORD = re.compile(r"[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß0-9'\-]*")
 _FUZZY_MIN = 84      # rapidfuzz ratio required for a fuzzy roster match
 _PHON_FUZZY_MIN = 60  # lower bar when the phonetic code also matches
 
+# Approximate matching needs a token long enough to be distinctive. Below this,
+# ordinary German words collide with real first names and get rewritten into a
+# pupil placeholder: "an"/"Anna", "nur"/"Nuri", "bei"/"Bea" all cleared the bar,
+# because Kölner Phonetik yields the same code for a short word as for the name
+# it is a prefix of, which drops the required ratio to _PHON_FUZZY_MIN.
+#
+# The damage was silent and it reached the saved record: "Anna war in Zürich an
+# der Exkursion" came back restored as "Anna war in Zürich Anna der Exkursion".
+#
+# 4 is measured, not guessed — at 3 "nur" and "bei" still matched, and at 5 the
+# real alias "Anni" stopped resolving to Anna. Exact matches bypass this at any
+# length, so a pupil actually called "Bo" is unaffected.
+MIN_FUZZY_LEN = 4
+
 # spaCy entity labels we replace, and the placeholder family each maps to.
 _PERSON_LABELS = frozenset({"PER", "PERSON"})
 _PLACE_LABELS = frozenset({"LOC", "ORG", "GPE"})
@@ -83,6 +97,9 @@ def _match_roster(token: str, idx: list[dict], exact: dict[str, dict]) -> dict |
     t = token.lower()
     if (hit := exact.get(t)) is not None:
         return hit
+
+    if len(t) < MIN_FUZZY_LEN:
+        return None
 
     tp = koelner_phonetik(token)
     best = None
@@ -168,26 +185,31 @@ def _reset_ner_cache_for_tests() -> None:
 def _anonymize(text: str, roster: list[dict]) -> AnonymizeResult:
     idx, exact = _roster_index(roster)
 
-    # (start, end, kind, payload) — payload is a roster entry or the surface str.
-    repls: list[tuple[int, int, str, object]] = []
+    # (start, end, kind, payload, origin) — payload is a roster entry or the
+    # surface string. `kind` picks the placeholder family; `origin` records which
+    # layer found it, which is a different question: the gazetteer and NER both
+    # produce Person{n}, but only one of them is trustworthy about it. The
+    # resolver needs that distinction to decide what to *propose* — see
+    # resolve._from_mapping.
+    repls: list[tuple[int, int, str, object, str]] = []
     covered = bytearray(len(text))
 
     for m in _WORD.finditer(text):
         tok = m.group()
         entry = _match_roster(tok, idx, exact)
         if entry is not None:
-            repls.append((m.start(), m.end(), "roster", entry))
+            repls.append((m.start(), m.end(), "roster", entry, "roster"))
         elif settings.anonymize_gazetteer and is_first_name(tok):
-            repls.append((m.start(), m.end(), "person", tok))
+            repls.append((m.start(), m.end(), "person", tok, "gazetteer"))
 
-    for s, e, _, _ in repls:
+    for s, e, _, _, _ in repls:
         for i in range(s, e):
             covered[i] = 1
 
     # NER spans that don't overlap an already-matched token.
     for s, e, kind in _ner_spans(text):
         if not any(covered[i] for i in range(s, e)):
-            repls.append((s, e, kind, text[s:e]))
+            repls.append((s, e, kind, text[s:e], "ner"))
             for i in range(s, e):
                 covered[i] = 1
 
@@ -201,7 +223,7 @@ def _anonymize(text: str, roster: list[dict]) -> AnonymizeResult:
     out: list[str] = []
     last = 0
 
-    for s, e, kind, payload in repls:
+    for s, e, kind, payload, origin in repls:
         if s < last:
             continue  # overlapping span already consumed
         out.append(text[last:s])
@@ -216,6 +238,7 @@ def _anonymize(text: str, roster: list[dict]) -> AnonymizeResult:
                     "restore": payload["short"],
                     "display": payload["full"],
                     "source": "roster",
+                    "kind": "person",
                 }
         else:
             surface = payload
@@ -229,7 +252,11 @@ def _anonymize(text: str, roster: list[dict]) -> AnonymizeResult:
                     "student_id": None,
                     "restore": surface,
                     "display": surface,
-                    "source": kind,
+                    # "gazetteer" | "ner" — how confident we are that this is a
+                    # person's name at all.
+                    "source": origin,
+                    # "person" | "place" — what kind of thing it is.
+                    "kind": kind,
                 }
         out.append(ph)
         last = e

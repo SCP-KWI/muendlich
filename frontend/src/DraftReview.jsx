@@ -131,6 +131,13 @@ export function DraftReview({ klass, draft, onDone }) {
               {i.status === "off_roster" && (
                 <span className="badge warn">nicht auf der Liste</span>
               )}
+              {/* The backend reached this when nothing supported treating the
+                  mention as a person — a capitalized ordinary word, a place, or
+                  a name the structurer invented. Say so, rather than leaving the
+                  card unlabelled next to its confident neighbours. */}
+              {i.status === "unassigned" && (
+                <span className="badge">vermutlich kein Name</span>
+              )}
             </div>
 
             <textarea
