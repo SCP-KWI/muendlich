@@ -399,7 +399,8 @@ footer {
   <li>Reiter <span class="ui">Verwalten</span> — hier liegt alles, was du nur selten anfasst.</li>
   <li><strong>Name.</strong> Nimm den, den du auch sagen würdest: <em>3a Deutsch</em>. Er erscheint später auf dem Handy in der Klassenliste, wo du ihn im Vorbeigehen treffen musst.</li>
   <li><strong>Fach und Semester</strong> sind optional, helfen aber, wenn du dieselbe Klasse in zwei Fächern hast.</li>
-  <li><span class="ui">Klasse anlegen</span> — fertig, die Klasse taucht sofort oben in der Liste auf.</li>
+  <li><strong>Schüler/innen.</strong> Die Klassenliste kannst du gleich mitgeben: Namen einfügen oder die CSV-Datei aus der Schulverwaltung wählen — wie das geht, steht im nächsten Abschnitt. Geht auch später.</li>
+  <li><span class="ui">Klasse anlegen</span> — fertig, die Klasse taucht sofort oben in der Liste auf. Hast du eine Liste mitgegeben, landest du direkt bei den Schüler/innen.</li>
   <li>Ein Klick auf den <strong>Klassennamen</strong> öffnet die Schüler/innen-Liste (nächster Abschnitt).</li>
   <li><span class="ui">bearbeiten</span> ändert die Angaben. <span class="ui">löschen</span> löscht die Klasse <strong>samt allen Beobachtungen</strong> — vorher exportieren, wenn du sie behalten willst.</li>
 </ol>
@@ -415,17 +416,23 @@ footer {
 <h2><span class="num">5</span>Schüler/innen erfassen</h2>
 <p class="sub">Der Abschnitt, der zwei Minuten kostet und dir danach viel Klickerei erspart.</p>
 
-<p>Klick in <span class="ui">Verwalten</span> auf den Klassennamen. Du siehst die Liste der Klasse; ganz unten fügst du neue Personen hinzu.</p>
+<p>Klick in <span class="ui">Verwalten</span> auf den Klassennamen. Du siehst die Liste der Klasse; darunter fügst du neue Personen hinzu — am schnellsten alle auf einmal.</p>
 
 {{FIG:sus-neu}}
 <ol class="legend">
-  <li><strong>Voller Name</strong>, dazu optional <strong>Rufname</strong> und <strong>Aliasse</strong> (kommagetrennt). Nach <span class="ui">Hinzufügen</span> ist die Person sofort in der Liste.</li>
+  <li><strong>Klassenliste einfügen.</strong> Namen ins Feld setzen, eine Person pro Zeile — oder <span class="ui">Datei wählen</span> und die CSV-Datei aus der Schulverwaltung nehmen. Bei einer Tabelle nimmt die App die Spalte <em>Vorname</em>; kommt ein Vorname zweimal vor, hängt sie den Nachnamen an, damit die beiden auseinanderzuhalten sind. Was sie verstanden hat, siehst du als Vorschau unter dem Feld, und falls sie die falsche Spalte erwischt hat, wählst du dort eine andere. <span class="ui">Hinzufügen</span> legt alle an; wer schon in der Liste steht, wird übersprungen — du kannst dieselbe Datei also gefahrlos noch einmal nehmen.</li>
+  <li><strong>Einzelne Person:</strong> voller Name, dazu optional <strong>Rufname</strong> und <strong>Aliasse</strong> (kommagetrennt). Für Nachzügler im Semester.</li>
 </ol>
+
+<div class="note">
+  <span class="label">Nur die Vornamen</span>
+  <p>Die Datei aus der Schulverwaltung enthält Adressen, Geburtstage, Telefonnummern. Sie wird nur in deinem Browser gelesen; an den Server gehen ausschliesslich die Namen. Excel-Dateien (.xlsx) kann die App nicht lesen — in Excel <em>Speichern unter → CSV UTF-8</em> wählen und diese Datei nehmen.</p>
+</div>
 
 <p>Bestehende Einträge bearbeitest du direkt in der Liste — anklicken, ändern, wegklicken. Gespeichert wird automatisch, es gibt keinen Speichern-Knopf.</p>
 
 {{FIG:sus}}
-<ol class="legend" start="2" style="counter-reset: lg 1">
+<ol class="legend" start="3" style="counter-reset: lg 2">
   <li><strong>Voller Name.</strong> So steht er in der Übersicht und im Export.</li>
   <li><strong>Rufname.</strong> Der Name, den du im Unterricht tatsächlich sagst. Wenn du nie „Beatrice Hunziker“ diktierst, sondern immer nur „Bea“, gehört „Bea“ hierhin.</li>
   <li><strong>Aliasse.</strong> Alles andere, was beim Diktieren herauskommen kann: <em>Anni</em>, <em>Feli</em>, <em>Collin</em> mit zwei L. Tippen, Enter drücken, fertig. Das × entfernt einen Alias wieder.</li>

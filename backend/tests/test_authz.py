@@ -15,6 +15,7 @@ def test_login_required_everywhere(client, two_teachers):
         ("GET", "/api/classes"),
         ("GET", f"/api/classes/{t['cls_a'].id}"),
         ("GET", f"/api/classes/{t['cls_a'].id}/students"),
+        ("POST", f"/api/classes/{t['cls_a'].id}/students/batch"),
         ("GET", f"/api/classes/{t['cls_a'].id}/observations"),
         ("GET", f"/api/classes/{t['cls_a'].id}/stats"),
         ("GET", f"/api/classes/{t['cls_a'].id}/export.csv"),
@@ -34,6 +35,7 @@ def test_login_required_everywhere(client, two_teachers):
         ("DELETE", "/api/classes/{cls_b}"),
         ("GET", "/api/classes/{cls_b}/students"),
         ("POST", "/api/classes/{cls_b}/students"),
+        ("POST", "/api/classes/{cls_b}/students/batch"),
         ("GET", "/api/classes/{cls_b}/observations"),
         ("GET", "/api/classes/{cls_b}/stats"),
         ("GET", "/api/classes/{cls_b}/export.csv"),
@@ -60,6 +62,9 @@ def test_other_teachers_resources_are_404(client, auth, two_teachers, method, te
     bodies = {
         "POST": {
             "captures": {"raw_text": "Bruno war gut."},
+            # Before "students": the lookup below is by substring, and the
+            # batch path contains it.
+            "students/batch": {"students": [{"full_name": "Neu Kind"}]},
             "students": {"full_name": "Neu Kind"},
             "aliases": {"alias": "Bruni"},
         },

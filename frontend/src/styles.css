@@ -541,3 +541,35 @@ form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
 .add-form .row, .editor .row { display: flex; gap: 8px; }
 .add-form .row input { flex: 1; }
 .editor input { margin-bottom: 8px; }
+
+/* ---- Class list import ------------------------------------ */
+/* Pasting or uploading a whole roster; the preview shows what was understood
+   before anything is sent. Chips reuse .alias-chip. */
+.student-list-input > label { font-weight: 500; font-size: .9rem; margin-bottom: 0; }
+.student-list-input textarea { margin: 6px 0 10px; min-height: 120px; resize: vertical; line-height: 1.45; }
+.file-row { align-items: center; gap: 10px; margin-bottom: 10px; }
+.file-btn {
+  background: var(--card); color: var(--text);
+  border: 1.5px solid var(--border-strong); border-radius: var(--r);
+  padding: 8px 12px; font-size: .9rem; font-weight: 600; flex-shrink: 0;
+}
+.file-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-ink); }
+.file-name { font-size: .88rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-pick { margin-bottom: 10px; }
+.col-pick label { flex: 1; min-width: 0; font-weight: 500; font-size: .85rem; margin-bottom: 0; }
+.col-pick select { margin-top: 4px; padding: 8px 32px 8px 10px; font-size: .92rem; }
+.name-preview { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; font-size: .9rem; }
+.name-preview .alias-chip { padding: 3px 11px; color: var(--text); }
+.field-warning { color: var(--warn); font-size: .82rem; font-weight: 500; margin: 0 0 8px; }
+.privacy-hint { font-size: .8rem; margin: 0; }
+.batch-form { margin-bottom: 16px; }
+/* Inside "Neue Klasse": the roster is optional and comes after the class itself. */
+.class-roster { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 12px; }
+.class-roster h4 { margin: 0 0 8px; font-size: .95rem; }
+.class-roster h4 .muted { font-weight: 400; }
+.notice.ok {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--ok-tint); color: var(--ok);
+  border: 1px solid var(--ok-solid); border-radius: var(--r);
+  padding: 10px 12px; line-height: 1.4; font-weight: 500;
+}

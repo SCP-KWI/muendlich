@@ -12,9 +12,9 @@ const rects = JSON.parse(readFileSync(`${SHOTS}rects.json`, "utf8"));
 // crop: [y0, y1] in page CSS px. only: subset of mark numbers to draw.
 const FIGURES = {
   login: { shot: "01-login", crop: [24, 400] },
-  klassen: { shot: "02-klassen-verwalten", crop: [66, 730] },
-  sus: { shot: "03-sus-verwalten", crop: [150, 726], only: [2, 3, 4, 5] },
-  "sus-neu": { shot: "03-sus-verwalten", crop: [1540, 1880], only: [1] },
+  klassen: { shot: "02-klassen-verwalten", crop: [66, 1010] },
+  sus: { shot: "03-sus-verwalten", crop: [150, 726], only: [3, 4, 5, 6] },
+  "sus-neu": { shot: "03-sus-verwalten", crop: [1540, 2295], only: [1, 2] },
   klassenwahl: { shot: "07-klasse-waehlen", crop: [70, 420] },
   aufnahme: { shot: "08-aufnahme", crop: [150, 640] },
   cloud: { shot: "10-an-die-cloud", crop: [270, 620] },

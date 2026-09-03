@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
 import { ConfirmDialog } from "./ConfirmDialog.jsx";
 import { ErrorBanner } from "./ErrorBanner.jsx";
+import { StudentListInput } from "./StudentListInput.jsx";
 
 const EMPTY = { name: "", subject: "", semester: "", school_year: "" };
 const NAME_REQUIRED = "Bitte geben Sie einen Namen ein.";
@@ -27,6 +28,10 @@ export function ManageClasses({ onOpenClass }) {
   // outline was the only hint, and screen readers got nothing at all.
   const [nameError, setNameError] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  // The class list given along with the new class, as parsed by
+  // StudentListInput; the key remounts (clears) it once saved.
+  const [names, setNames] = useState([]);
+  const [listKey, setListKey] = useState(0);
 
   function load() {
     api
@@ -42,9 +47,29 @@ export function ManageClasses({ onOpenClass }) {
     setError(null);
     setBusy(true);
     try {
-      await api.createClass(payload);
+      const created = await api.createClass(payload);
       setForm(EMPTY);
       setDuplicate(null);
+      if (names.length) {
+        // The class exists from here on whatever happens next, so a failed
+        // roster upload must not read as "class not created". The names stay
+        // in the field so the teacher can open the class and try again.
+        try {
+          const res = await api.createStudents(
+            created.id,
+            names.map((n) => ({ full_name: n }))
+          );
+          setListKey((k) => k + 1);
+          setNames([]);
+          // Straight to the roster, where the result is visible.
+          onOpenClass({ ...created, student_count: res.created.length });
+          return;
+        } catch (err) {
+          setError(
+            `Die Klasse «${created.name}» wurde angelegt, aber die Namensliste konnte nicht gespeichert werden: ${err.message}`
+          );
+        }
+      }
       load();
     } catch (err) {
       if (err.code === "duplicate_class_name") {
@@ -183,8 +208,24 @@ export function ManageClasses({ onOpenClass }) {
           value={form.school_year}
           onChange={(e) => setForm({ ...form, school_year: e.target.value })}
         />
+        <div className="class-roster">
+          <h4>
+            Schüler/innen{" "}
+            <span className="muted">(optional – geht auch später)</span>
+          </h4>
+          <StudentListInput
+            key={listKey}
+            idPrefix="class-list"
+            onChange={setNames}
+            disabled={busy}
+          />
+        </div>
         <button className="primary" type="submit" disabled={busy}>
-          {busy ? "…" : "Klasse anlegen"}
+          {busy
+            ? "…"
+            : names.length
+              ? `Klasse mit ${names.length} Schüler/innen anlegen`
+              : "Klasse anlegen"}
         </button>
       </form>
 

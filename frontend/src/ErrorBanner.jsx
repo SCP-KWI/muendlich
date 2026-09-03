@@ -26,3 +26,25 @@ export function ErrorBanner({ message, onDismiss = null }) {
     </div>
   );
 }
+
+// The counterpart for an outcome worth a sentence — "23 Personen hinzugefügt,
+// 2 übersprungen" — where a silently refreshed list would leave the teacher
+// counting.
+export function Notice({ message, onDismiss = null }) {
+  if (!message) return null;
+  return (
+    <div className="notice ok" role="status">
+      <span className="error-banner-text">{message}</span>
+      {onDismiss && (
+        <button
+          type="button"
+          className="error-banner-x"
+          onClick={onDismiss}
+          aria-label="Meldung schliessen"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}

@@ -63,7 +63,9 @@ def test_two_students_get_distinct_placeholders(roster):
     assert ids == {"s-anna", "s-colin"}
 
 
-@pytest.mark.parametrize("variant", ["Ana", "Annna", "Kolin", "Collin"])
+# No "Ana": tokens under MIN_FUZZY_LEN match exactly or not at all (see
+# namematch.py) — the price of not turning "an", "nur" and "bei" into pupils.
+@pytest.mark.parametrize("variant", ["Annna", "Kolin", "Collin"])
 def test_misspellings_still_match_the_roster(roster, variant):
     """Dictation and phonetic variants must not leak through as raw names."""
     result = anonymize(f"{variant} war heute gut.", roster, enabled=True)

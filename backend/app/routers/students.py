@@ -12,12 +12,19 @@ from ..models import Class, Student, StudentAlias, User
 from ..schemas import (
     AliasCreate,
     AliasOut,
+    StudentBatchCreate,
+    StudentBatchResult,
     StudentCreate,
     StudentOut,
     StudentUpdate,
 )
 
 router = APIRouter(tags=["students"])
+
+
+def _roster_key(name: str) -> str:
+    """Case- and whitespace-insensitive identity of a name within one class."""
+    return " ".join(name.split()).casefold()
 
 
 # ---- students within a class ----
@@ -59,6 +66,62 @@ def add_student(
     db.refresh(student)
     audit("student.created", actor=user.id, class_id=cls.id, student_id=student.id)
     return student
+
+
+@router.post("/api/classes/{class_id}/students/batch", response_model=StudentBatchResult)
+def add_students(
+    body: StudentBatchCreate,
+    cls: Class = Depends(get_owned_class),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+) -> StudentBatchResult:
+    """Create many pupils in one transaction — a pasted class list.
+
+    Names already on the roster are skipped rather than refused: the usual
+    reason for sending one twice is uploading the list again after a pupil was
+    added by hand, and that should add the missing ones, not fail. All-or-
+    nothing otherwise, so a rejected name never leaves half a class behind.
+    """
+    taken = {
+        _roster_key(name)
+        for name in db.scalars(select(Student.full_name).where(Student.class_id == cls.id))
+    }
+    created: list[Student] = []
+    skipped: list[str] = []
+    for item in body.students:
+        key = _roster_key(item.full_name)
+        if key in taken:
+            skipped.append(item.full_name)
+            continue
+        taken.add(key)
+        student = Student(
+            class_id=cls.id,
+            full_name=item.full_name,
+            short_name=item.short_name,
+            aliases=[StudentAlias(alias=a) for a in item.aliases],
+        )
+        db.add(student)
+        created.append(student)
+
+    # Ids are assigned at flush; keep them, because commit expires the objects
+    # and reading them back afterwards would be one SELECT per pupil.
+    db.flush()
+    ids = [s.id for s in created]
+    db.commit()
+    audit(
+        "student.batch_created",
+        actor=user.id,
+        class_id=cls.id,
+        # Not `created`: logging reserves that name on every LogRecord.
+        n_created=len(ids),
+        n_skipped=len(skipped),
+    )
+
+    fresh = {s.id: s for s in db.scalars(select(Student).where(Student.id.in_(ids)))} if ids else {}
+    return StudentBatchResult(
+        created=[StudentOut.model_validate(fresh[i]) for i in ids],
+        skipped=skipped,
+    )
 
 
 @router.patch("/api/students/{student_id}", response_model=StudentOut)

@@ -35,7 +35,7 @@ export const TOUR_STEPS = [
   {
     target: '[data-tour="manage"]',
     title: "Verwalten",
-    body: "Klassen und Schüler/innen pflegen. Spitznamen sind hier besonders nützlich: Sie helfen der Zuordnung, wenn Sie beim Diktieren nur den Rufnamen sagen.",
+    body: "Klassen und Schüler/innen pflegen — eine ganze Klassenliste lässt sich auf einmal einfügen. Spitznamen sind hier besonders nützlich: Sie helfen der Zuordnung, wenn Sie beim Diktieren nur den Rufnamen sagen.",
   },
   {
     target: '[data-tour="handbook"]',

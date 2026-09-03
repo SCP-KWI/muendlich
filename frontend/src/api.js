@@ -173,6 +173,9 @@ export const api = {
   deleteClass: (id) => request("DELETE", `/api/classes/${id}`),
   createStudent: (classId, body) =>
     request("POST", `/api/classes/${classId}/students`, body),
+  // A whole class list in one request; resolves to {created, skipped}.
+  createStudents: (classId, students) =>
+    request("POST", `/api/classes/${classId}/students/batch`, { students }),
   updateStudent: (id, patch) => request("PATCH", `/api/students/${id}`, patch),
   deleteStudent: (id) => request("DELETE", `/api/students/${id}`),
   addAlias: (studentId, alias) =>

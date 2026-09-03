@@ -179,6 +179,24 @@ class StudentOut(BaseModel):
     aliases: list[AliasOut] = []
 
 
+# A whole class list pasted at once. Real rosters are ~25; the cap is against a
+# runaway paste (a whole school's export), not against normal use. Mirrored as
+# MAX_NAMES in frontend/src/nameList.js.
+MAX_BATCH = 500
+
+
+class StudentBatchCreate(BaseModel):
+    students: list[StudentCreate] = Field(min_length=1, max_length=MAX_BATCH)
+
+
+class StudentBatchResult(BaseModel):
+    created: list[StudentOut]
+    # Names that were already on the roster, or repeated within the batch, in
+    # the order they were sent. Uploading the list again after one pupil was
+    # added by hand then adds only the missing ones instead of failing outright.
+    skipped: list[str]
+
+
 # ---- capture / draft ----
 class CaptureCreate(BaseModel):
     raw_text: Annotated[str, Field(min_length=1, max_length=MAX_RAW_TEXT)]

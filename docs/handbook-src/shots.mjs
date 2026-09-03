@@ -46,6 +46,22 @@ async function clickText(page, selector, text) {
   await sleep(500);
 }
 
+// The guided tour opens on a first login (and always for the demo teacher);
+// it would sit on top of every screenshot.
+async function dismissTour(page) {
+  const find = () =>
+    [...document.querySelectorAll("button")].find((b) =>
+      ["Überspringen", "Schliessen"].includes(b.textContent.trim())
+    );
+  // It opens once /api/me has answered, a moment after the tabs render.
+  const btn = await page
+    .waitForFunction(find, { timeout: 4000 })
+    .catch(() => null);
+  if (!btn) return;
+  await btn.asElement().click();
+  await sleep(400);
+}
+
 // specs: [{ n, sel, nth?, text?, side }]  — sel resolved in page, optionally
 // filtered by contained text or index.
 async function shot(page, name, device, specs = []) {
@@ -107,6 +123,7 @@ const browser = await puppeteer.launch({
 
   await page.click('button[type="submit"]');
   await page.waitForSelector(".tabs", { timeout: 10000 });
+  await dismissTour(page);
   await sleep(600);
 
   await clickText(page, ".tab", "Verwalten");
@@ -115,19 +132,21 @@ const browser = await puppeteer.launch({
     { n: 1, sel: ".tab", text: "Verwalten", side: "r" },
     { n: 2, sel: '.add-form input[placeholder^="Name"]', side: "l" },
     { n: 3, sel: ".add-form .row", side: "l" },
-    { n: 4, sel: '.add-form button[type="submit"]', side: "l" },
-    { n: 5, sel: ".manage-open", nth: 1, side: "l" },
-    { n: 6, sel: ".manage-actions", nth: 1, side: "r" },
+    { n: 4, sel: ".class-roster", side: "l" },
+    { n: 5, sel: '.add-form button[type="submit"]', side: "l" },
+    { n: 6, sel: ".manage-open", nth: 1, side: "l" },
+    { n: 7, sel: ".manage-actions", nth: 1, side: "r" },
   ]);
 
   await clickText(page, ".manage-open", "3a Deutsch");
   await page.waitForSelector(".student-edit");
   await shot(page, "03-sus-verwalten", "desktop", [
-    { n: 1, sel: ".add-form", side: "l" },
-    { n: 2, sel: ".stud-name", side: "l" },
-    { n: 3, sel: ".stud-short", side: "r" },
-    { n: 4, sel: ".alias-row", nth: 2, side: "l" },
-    { n: 5, sel: ".manage-item .manage-actions", nth: 2, side: "r" },
+    { n: 1, sel: ".batch-form", side: "l" },
+    { n: 2, sel: ".single-form", side: "l" },
+    { n: 3, sel: ".stud-name", side: "l" },
+    { n: 4, sel: ".stud-short", side: "r" },
+    { n: 5, sel: ".alias-row", nth: 2, side: "l" },
+    { n: 6, sel: ".manage-item .manage-actions", nth: 2, side: "r" },
   ]);
 
   await clickText(page, ".tab", "Übersicht");
@@ -165,6 +184,7 @@ const browser = await puppeteer.launch({
     await page.type('input[type="password"]', PASSWORD, { delay: 8 });
     await page.click('button[type="submit"]');
     await page.waitForSelector(".tabs", { timeout: 10000 });
+    await dismissTour(page);
   }
   await sleep(600);
 

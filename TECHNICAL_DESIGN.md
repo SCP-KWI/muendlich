@@ -216,6 +216,7 @@ All routes require a valid access token unless noted. `{id}` are UUIDs.
 |--------|------|------|---------|
 | GET | `/api/classes/{classId}/students` | — | students in class |
 | POST | `/api/classes/{classId}/students` | `{full_name, short_name?, aliases?[]}` | student |
+| POST | `/api/classes/{classId}/students/batch` | `{students: [{full_name, short_name?, aliases?[]}]}` (≤ 500) | `{created: [student…], skipped: [name…]}` — one transaction; names already on the roster are skipped, not refused |
 | PATCH | `/api/students/{id}` | partial (incl. `active`) | student |
 | DELETE | `/api/students/{id}` | — | 204 (observations become unassigned) |
 | POST | `/api/students/{id}/aliases` | `{alias}` | alias |

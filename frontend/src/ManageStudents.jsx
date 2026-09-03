@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
 import { ConfirmDialog } from "./ConfirmDialog.jsx";
-import { ErrorBanner } from "./ErrorBanner.jsx";
+import { ErrorBanner, Notice } from "./ErrorBanner.jsx";
+import { StudentListInput, describeBatchResult } from "./StudentListInput.jsx";
 
 const NAME_REQUIRED = "Bitte geben Sie einen Namen ein.";
 
 export function ManageStudents({ klass, onBack }) {
   const [students, setStudents] = useState(null);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
   const [aliases, setAliases] = useState("");
@@ -18,6 +20,11 @@ export function ManageStudents({ klass, onBack }) {
   // outline was the only hint, and screen readers got nothing at all.
   const [nameError, setNameError] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  // The pasted class list: names as parsed by StudentListInput, and a key that
+  // remounts (clears) it once they are saved.
+  const [batchNames, setBatchNames] = useState([]);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchKey, setBatchKey] = useState(0);
 
   function load() {
     api
@@ -26,6 +33,28 @@ export function ManageStudents({ klass, onBack }) {
       .catch((e) => setError(e.message));
   }
   useEffect(load, [klass.id]);
+
+  async function addMany(e) {
+    e.preventDefault();
+    if (!batchNames.length || batchBusy) return;
+    setError(null);
+    setNotice(null);
+    setBatchBusy(true);
+    try {
+      const res = await api.createStudents(
+        klass.id,
+        batchNames.map((n) => ({ full_name: n }))
+      );
+      setNotice(describeBatchResult(res));
+      setBatchKey((k) => k + 1);
+      setBatchNames([]);
+      load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBatchBusy(false);
+    }
+  }
 
   async function add(e) {
     e.preventDefault();
@@ -109,6 +138,7 @@ export function ManageStudents({ klass, onBack }) {
         ← Klassen
       </button>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      <Notice message={notice} onDismiss={() => setNotice(null)} />
       <h2>{klass.name} · Schüler/innen</h2>
 
       <ul className="manage-list">
@@ -181,9 +211,32 @@ export function ManageStudents({ klass, onBack }) {
         ))}
       </ul>
 
+      {/* The whole list first: at the start of a semester that is how a class
+          gets filled. The one-at-a-time form below stays for latecomers. */}
+      <form className="card add-form batch-form" onSubmit={addMany} noValidate>
+        <h3>Klassenliste einfügen</h3>
+        <StudentListInput
+          key={batchKey}
+          idPrefix="roster-list"
+          onChange={setBatchNames}
+          disabled={batchBusy}
+        />
+        <button
+          className="primary"
+          type="submit"
+          disabled={batchBusy || batchNames.length === 0}
+        >
+          {batchBusy
+            ? "…"
+            : batchNames.length
+              ? `${batchNames.length} hinzufügen`
+              : "Hinzufügen"}
+        </button>
+      </form>
+
       {/* noValidate, but the input keeps `required` — see ManageClasses.jsx. */}
-      <form className="card add-form" onSubmit={add} noValidate>
-        <h3>Schüler/in hinzufügen</h3>
+      <form className="card add-form single-form" onSubmit={add} noValidate>
+        <h3>Einzelne Person hinzufügen</h3>
         <input
           id="new-student-name"
           className={nameError ? "invalid" : undefined}
