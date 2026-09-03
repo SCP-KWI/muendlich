@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>muendlich — Handbuch für Lehrpersonen</title>
+<meta name="description" content="Kurzanleitung für muendlich: mündliche Beobachtungen diktieren, prüfen und über das Semester zu einer belegbaren Note verdichten.">
+<style>
+{{FONTS}}
+
+/* ============================================================
+   Chalk design system — dieselben Tokens wie die App
+   ============================================================ */
+:root {
+  --bg: oklch(0.985 0.006 83);
+  --card: oklch(0.998 0.003 83);
+  --surface-2: oklch(0.955 0.008 83);
+  --border: oklch(0.912 0.010 83);
+  --border-strong: oklch(0.845 0.013 83);
+  --text: oklch(0.290 0.014 70);
+  --muted: oklch(0.520 0.012 70);
+  --faint: oklch(0.660 0.010 70);
+  --shadow: 0 1px 2px rgba(52,42,26,.05), 0 6px 20px rgba(52,42,26,.05);
+  --shadow-lg: 0 2px 4px rgba(52,42,26,.06), 0 18px 44px rgba(52,42,26,.10);
+
+  --primary: oklch(0.700 0.108 340);
+  --primary-dark: oklch(0.640 0.120 340);
+  --primary-tint: oklch(0.955 0.032 338);
+  --primary-ink: oklch(0.515 0.118 338);
+
+  --ok: oklch(0.475 0.098 152);
+  --ok-tint: oklch(0.955 0.030 155);
+  --ok-solid: oklch(0.705 0.088 152);
+  --warn: oklch(0.500 0.090 68);
+  --warn-tint: oklch(0.958 0.034 82);
+  --warn-solid: oklch(0.760 0.100 78);
+  --err: oklch(0.520 0.150 26);
+  --err-tint: oklch(0.955 0.032 30);
+
+  --r-sm: 9px;
+  --r: 12px;
+  --r-lg: 16px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(0.205 0.008 75);
+    --card: oklch(0.248 0.010 75);
+    --surface-2: oklch(0.292 0.011 75);
+    --border: oklch(0.335 0.012 75);
+    --border-strong: oklch(0.410 0.014 75);
+    --text: oklch(0.935 0.008 83);
+    --muted: oklch(0.705 0.011 80);
+    --faint: oklch(0.560 0.010 80);
+    --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.36);
+    --shadow-lg: 0 2px 6px rgba(0,0,0,.34), 0 22px 52px rgba(0,0,0,.48);
+    --primary-tint: oklch(0.345 0.054 338);
+    --primary-ink: oklch(0.830 0.098 338);
+    --ok: oklch(0.825 0.088 155);
+    --ok-tint: oklch(0.335 0.044 152);
+    --warn: oklch(0.840 0.088 82);
+    --warn-tint: oklch(0.350 0.046 78);
+    --err: oklch(0.820 0.110 30);
+    --err-tint: oklch(0.345 0.060 28);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 96px; }
+
+/* ---- Kopf ---- */
+.masthead {
+  border-bottom: 1px solid var(--border);
+  padding: 40px 0 30px;
+  margin-bottom: 8px;
+}
+.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.brand-badge {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: var(--primary); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.brand-badge svg { width: 22px; height: 22px; }
+.brand-name { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; }
+h1 {
+  font-size: clamp(2rem, 5vw, 2.7rem); font-weight: 700;
+  letter-spacing: -.028em; line-height: 1.12; margin: 0 0 14px;
+}
+.lede { font-size: 1.18rem; color: var(--muted); margin: 0; max-width: 60ch; }
+.meta {
+  margin-top: 22px; font-size: .85rem; color: var(--faint);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ---- Inhaltsverzeichnis ---- */
+.toc {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px 24px; margin: 34px 0 8px;
+  box-shadow: var(--shadow);
+}
+.toc h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--faint); margin: 0 0 12px; font-weight: 700; }
+.toc ol { margin: 0; padding: 0; list-style: none;
+  columns: 2; column-gap: 32px; }
+.toc li { margin-bottom: 6px; break-inside: avoid; }
+.toc a { color: var(--text); text-decoration: none; font-weight: 600; font-size: .95rem; }
+.toc a:hover { color: var(--primary-ink); }
+.toc .num {
+  display: inline-block; width: 1.6em;
+  color: var(--faint); font-family: "IBM Plex Mono", monospace; font-size: .85rem;
+}
+@media (max-width: 620px) { .toc ol { columns: 1; } }
+
+/* ---- Typografie ---- */
+section { padding-top: 46px; }
+h2 {
+  font-size: 1.62rem; font-weight: 700; letter-spacing: -.02em;
+  margin: 0 0 6px; scroll-margin-top: 20px;
+}
+h2 .num {
+  font-family: "IBM Plex Mono", monospace; font-size: .78em;
+  color: var(--primary); margin-right: .5em; font-weight: 600;
+}
+h3 { font-size: 1.12rem; font-weight: 700; margin: 34px 0 8px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 22px; font-size: 1.02rem; }
+p { margin: 0 0 16px; }
+a { color: var(--primary-ink); text-decoration-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  text-underline-offset: 2px; }
+a:hover { color: var(--primary); }
+strong { font-weight: 700; }
+ul, ol { margin: 0 0 16px; padding-left: 1.35em; }
+li { margin-bottom: 7px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+kbd {
+  font-family: "IBM Plex Mono", monospace; font-size: .82em;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; white-space: nowrap;
+}
+.ui {
+  font-weight: 600; background: var(--surface-2);
+  border-radius: 5px; padding: 1px 6px; font-size: .93em;
+  border: 1px solid var(--border);
+}
+
+/* ---- Boxen ---- */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow);
+  margin: 22px 0;
+}
+.note {
+  border-left: 4px solid var(--primary); background: var(--primary-tint);
+  border-radius: var(--r); padding: 14px 18px; margin: 22px 0;
+}
+.note.warn { border-left-color: var(--warn-solid); background: var(--warn-tint); }
+.note.ok { border-left-color: var(--ok-solid); background: var(--ok-tint); }
+.note p:last-child { margin-bottom: 0; }
+.note .label {
+  display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--primary-ink); margin-bottom: 5px;
+}
+.note.warn .label { color: var(--warn); }
+.note.ok .label { color: var(--ok); }
+
+.quote {
+  font-family: "IBM Plex Mono", monospace; font-size: .88rem; line-height: 1.6;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px; margin: 18px 0;
+  white-space: pre-wrap;
+}
+
+/* ---- Ablauf-Kette ---- */
+.flow { display: grid; gap: 10px; margin: 26px 0 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.flow .step {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 15px; box-shadow: var(--shadow);
+  position: relative;
+}
+.flow .step b { display: block; font-size: .95rem; margin-bottom: 3px; }
+.flow .step span { font-size: .85rem; color: var(--muted); line-height: 1.45; display: block; }
+.flow .step .i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 999px; margin-bottom: 8px;
+  background: var(--primary); color: #fff;
+  font-size: .72rem; font-weight: 700; font-family: "IBM Plex Mono", monospace;
+}
+.flow .step.local .i { background: var(--ok-solid); }
+.flow .step.cloud .i { background: var(--warn-solid); }
+
+/* ---- Tabelle ---- */
+.tablewrap { overflow-x: auto; margin: 20px 0; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; min-width: 520px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border);
+  vertical-align: top; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--faint); font-weight: 700; }
+tbody tr:last-child td { border-bottom: none; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+/* ---- Abbildungen ---- */
+figure { margin: 26px 0 30px; }
+.fig {
+  display: block; width: 100%; height: auto; margin: 24px 0 6px;
+  border-radius: var(--r-lg); border: 1px solid var(--border);
+  background: var(--card); box-shadow: var(--shadow-lg);
+  color: var(--primary-dark);
+}
+.fig--mobile { max-width: 480px; }
+.fig .hal { stroke: #fffdf8; stroke-width: 6; stroke-linecap: round; opacity: .92; fill: none; }
+.fig .arw { stroke: var(--primary-dark); stroke-width: 2.2; fill: none; }
+.fig .bdg { fill: var(--primary-dark); stroke: #fffdf8; stroke-width: 2.5; }
+.fig .bdgt {
+  fill: #fff; font-family: "IBM Plex Mono", monospace; font-size: 16px; font-weight: 600;
+  text-anchor: middle; dominant-baseline: middle;
+}
+figcaption { font-size: .88rem; color: var(--muted); margin-top: 12px; }
+
+/* nummerierte Legende zur Abbildung */
+.legend { list-style: none; padding: 0; margin: 14px 0 0; counter-reset: lg; }
+.legend li {
+  position: relative; padding-left: 34px; margin-bottom: 9px;
+  font-size: .95rem; line-height: 1.5;
+}
+.legend li::before {
+  counter-increment: lg; content: counter(lg);
+  position: absolute; left: 0; top: .12em;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--primary-dark); color: #fff;
+  font-family: "IBM Plex Mono", monospace; font-size: .74rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ---- Checkliste ---- */
+.check { list-style: none; padding: 0; margin: 16px 0; }
+.check li { position: relative; padding-left: 28px; margin-bottom: 8px; }
+.check li::before {
+  content: "✓"; position: absolute; left: 0; top: 0;
+  color: var(--ok-solid); font-weight: 700;
+}
+
+/* ---- FAQ ---- */
+details.faq {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 13px 18px; margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+details.faq summary { cursor: pointer; font-weight: 600; list-style-position: outside; }
+details.faq summary::marker { color: var(--primary); }
+details.faq p { margin: 10px 0 2px; font-size: .96rem; }
+
+/* ---- Fuss ---- */
+footer {
+  margin-top: 66px; padding-top: 26px; border-top: 1px solid var(--border);
+  font-size: .9rem; color: var(--muted);
+}
+
+@media print {
+  body { font-size: 11pt; }
+  .toc, footer { break-inside: avoid; }
+  section { break-before: auto; }
+  figure { break-inside: avoid; }
+  .fig { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="brand">
+    <span class="brand-badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+    </span>
+    <span class="brand-name">muendlich</span>
+  </div>
+  <h1>Handbuch für Lehrpersonen</h1>
+  <p class="lede">Mündliche Beobachtungen in dreissig Sekunden festhalten — statt sie bis zur Notenkonferenz im Kopf zu behalten und dort dann doch nicht mehr zu finden.</p>
+  <p class="meta">Stand: Juli 2026 · Fragen und Accounts: philip.schaffner@kwi.ch</p>
+</header>
+
+<nav class="toc" aria-label="Inhalt">
+  <h2>Inhalt</h2>
+  <ol>
+    <li><span class="num">1</span><a href="#was">Wofür muendlich da ist</a></li>
+    <li><span class="num">2</span><a href="#ablauf">So läuft eine Aufnahme</a></li>
+    <li><span class="num">3</span><a href="#account">Account anfragen &amp; einloggen</a></li>
+    <li><span class="num">4</span><a href="#klasse">Klasse anlegen</a></li>
+    <li><span class="num">5</span><a href="#sus">Schüler/innen erfassen</a></li>
+    <li><span class="num">6</span><a href="#aufnahme">Aufnahme machen</a></li>
+    <li><span class="num">7</span><a href="#cloud">Prüfen, was an die KI ging</a></li>
+    <li><span class="num">8</span><a href="#namen">Wie die Namen erkannt werden</a></li>
+    <li><span class="num">9</span><a href="#pruefen">Zuweisungen prüfen</a></li>
+    <li><span class="num">10</span><a href="#uebersicht">Übersicht &amp; bewerten</a></li>
+    <li><span class="num">11</span><a href="#export">Exportieren</a></li>
+    <li><span class="num">12</span><a href="#tipps">Tipps aus dem Alltag</a></li>
+    <li><span class="num">13</span><a href="#faq">Wenn etwas klemmt</a></li>
+  </ol>
+</nav>
+
+<!-- ==================================================================== -->
+<section id="was">
+<h2><span class="num">1</span>Wofür muendlich da ist</h2>
+<p class="sub">Kurz: Du redest, die App sortiert.</p>
+
+<p>Am Ende des Semesters brauchst du eine mündliche Note. Was du dafür hast, ist ein Gefühl — und die deutliche Erinnerung an die drei Personen, die am lautesten waren. muendlich schliesst die Lücke dazwischen: Du diktierst nach der Lektion zwei, drei Sätze in dein Handy, die App zerlegt sie in einzelne Beobachtungen, ordnet jede der richtigen Person zu und legt sie ab. Nach zwölf Wochen hast du pro Schüler/in eine Liste statt eines Bauchgefühls.</p>
+
+<h3>Für wen</h3>
+<p>Für Lehrpersonen, die eine Mitarbeits- oder Mündlichnote setzen müssen und zwischen zwei Lektionen genau so viel Zeit haben, wie der Weg ins Lehrerzimmer dauert. Du brauchst keine Vorkenntnisse — wenn du schon einmal eine App auf dem Handy benutzt hast, reicht das.</p>
+
+<h3>Typische Anwendungsfälle</h3>
+<ul>
+  <li><strong>Direkt nach der Lektion.</strong> Handy raus, Klasse antippen, diktieren, prüfen, fertig. Das ist der Normalfall und dauert unter einer Minute.</li>
+  <li><strong>Elterngespräch vorbereiten.</strong> Die Zeitleiste einer Person durchgehen, statt „also, ich habe da so den Eindruck …“ zu sagen.</li>
+  <li><strong>Notenkonferenz.</strong> Verhältnis positiv/neutral/negativ plus Notenschnitt pro Person, als PDF ausgedruckt.</li>
+  <li><strong>Belegt widersprechen.</strong> Wenn jemand findet, er melde sich <em>immer</em>, ist die Liste ein sachlicheres Gegenüber als deine Erinnerung.</li>
+  <li><strong>Nachtragen.</strong> Etwas fällt dir erst am Abend ein? Du kannst den Text auch einfach tippen — diktieren ist ein Weg, kein Zwang.</li>
+</ul>
+
+<h3>Was muendlich nicht ist</h3>
+<p>Kein Notenprogramm und kein Ersatz für LehrerOffice oder Escola — die offizielle Note setzt weiterhin du, im System deiner Schule. Keine Prüfungsverwaltung. Und nichts, was Schüler/innen oder Eltern zu sehen bekommen: Es gibt keine Logins ausser deinem, und andere Lehrpersonen sehen deine Klassen nicht.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="ablauf">
+<h2><span class="num">2</span>So läuft eine Aufnahme</h2>
+<p class="sub">Damit du weisst, was passiert, während du auf „Auswerten“ wartest.</p>
+
+<div class="flow">
+  <div class="step local"><span class="i">1</span><b>Du diktierst</b><span>Dein Gerät wandelt Sprache in Text um. Audio verlässt das Gerät nicht.</span></div>
+  <div class="step local"><span class="i">2</span><b>Namen raus</b><span>Der Server ersetzt alle Namen durch Platzhalter: Student1, Student2 …</span></div>
+  <div class="step cloud"><span class="i">3</span><b>KI sortiert</b><span>Die KI zerlegt den Text in Beobachtungen und schlägt eine Tendenz vor.</span></div>
+  <div class="step local"><span class="i">4</span><b>Namen zurück</b><span>Die Platzhalter werden lokal wieder durch die echten Namen ersetzt.</span></div>
+  <div class="step"><span class="i">5</span><b>Du prüfst</b><span>Zuordnung, Text und Tendenz korrigieren — dann speichern.</span></div>
+</div>
+
+<p style="font-size:.86rem;color:var(--muted);margin-top:10px">Grün = passiert auf deinem Gerät bzw. auf dem Server der Schule. Orange = verlässt das Haus.</p>
+
+<div class="note">
+  <span class="label">Drei Dinge, die es wert sind, gewusst zu werden</span>
+  <p><strong>Es wird nie Audio verschickt.</strong> Die Spracherkennung macht dein Handy oder dein Laptop, nicht die App.<br>
+  <strong>Namen gehen nicht in die Cloud.</strong> Sie werden vorher durch Platzhalter ersetzt — und du kannst bei jeder Aufnahme nachlesen, was tatsächlich rausgegangen ist (<a href="#cloud">Abschnitt 7</a>).<br>
+  <strong>Die KI bewertet nicht.</strong> Sie schlägt nur „positiv / neutral / negativ“ vor. Die Note setzt du.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="account">
+<h2><span class="num">3</span>Account anfragen &amp; einloggen</h2>
+<p class="sub">Es gibt keine Selbstregistrierung — Accounts werden von Hand angelegt.</p>
+
+<h3>Account anfragen</h3>
+<p>Schreib eine Mail an <a href="mailto:philip.schaffner@kwi.ch?subject=muendlich%20—%20Account">philip.schaffner@kwi.ch</a> mit:</p>
+<ul class="check">
+  <li>deinem Namen</li>
+  <li>der dienstlichen Mailadresse, die als Login dienen soll</li>
+  <li>Schule / Fachschaft</li>
+</ul>
+<p>Zurück kommen die Adresse der App und ein Startpasswort. Ändere das Passwort bei Gelegenheit — und nimm eines, das du nicht auch für den Webmail-Zugang verwendest.</p>
+
+<h3>Einloggen</h3>
+{{FIG:login}}
+<ol class="legend">
+  <li>Dienstliche Mailadresse — genau die, die du angemeldet hast.</li>
+  <li>Passwort aus der Mail.</li>
+  <li><span class="ui">Anmelden</span>. Danach bleibst du rund 30 Tage eingeloggt; nach der Lektion musst du dich also nicht jedes Mal neu anmelden.</li>
+</ol>
+
+<div class="note ok">
+  <span class="label">Einmal einrichten, dauerhaft schneller</span>
+  <p>Leg die App auf dem Handy auf den Startbildschirm: Im Browser das Teilen- bzw. Menü-Symbol öffnen und <span class="ui">Zum Home-Bildschirm</span> wählen. Danach startet muendlich wie eine normale App, ohne Adresszeile — das spart bei jeder Aufnahme ein paar Sekunden und einige Fehlklicks.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="klasse">
+<h2><span class="num">4</span>Klasse anlegen</h2>
+<p class="sub">Am Computer, einmal pro Semester. Reiter <span class="ui">Verwalten</span>.</p>
+
+{{FIG:klassen}}
+<ol class="legend">
+  <li>Reiter <span class="ui">Verwalten</span> — hier liegt alles, was du nur selten anfasst.</li>
+  <li><strong>Name.</strong> Nimm den, den du auch sagen würdest: <em>3a Deutsch</em>. Er erscheint später auf dem Handy in der Klassenliste, wo du ihn im Vorbeigehen treffen musst.</li>
+  <li><strong>Fach und Semester</strong> sind optional, helfen aber, wenn du dieselbe Klasse in zwei Fächern hast.</li>
+  <li><span class="ui">Klasse anlegen</span> — fertig, die Klasse taucht sofort oben in der Liste auf.</li>
+  <li>Ein Klick auf den <strong>Klassennamen</strong> öffnet die Schüler/innen-Liste (nächster Abschnitt).</li>
+  <li><span class="ui">bearbeiten</span> ändert die Angaben. <span class="ui">löschen</span> löscht die Klasse <strong>samt allen Beobachtungen</strong> — vorher exportieren, wenn du sie behalten willst.</li>
+</ol>
+
+<div class="note warn">
+  <span class="label">Neues Semester</span>
+  <p>Leg für ein neues Semester lieber eine neue Klasse an, statt die alte umzubenennen. Sonst landen die Beobachtungen von zwei Semestern in derselben Statistik, und der Schnitt sagt dann ungefähr nichts mehr aus.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="sus">
+<h2><span class="num">5</span>Schüler/innen erfassen</h2>
+<p class="sub">Der Abschnitt, der zwei Minuten kostet und dir danach viel Klickerei erspart.</p>
+
+<p>Klick in <span class="ui">Verwalten</span> auf den Klassennamen. Du siehst die Liste der Klasse; ganz unten fügst du neue Personen hinzu.</p>
+
+{{FIG:sus-neu}}
+<ol class="legend">
+  <li><strong>Voller Name</strong>, dazu optional <strong>Rufname</strong> und <strong>Aliasse</strong> (kommagetrennt). Nach <span class="ui">Hinzufügen</span> ist die Person sofort in der Liste.</li>
+</ol>
+
+<p>Bestehende Einträge bearbeitest du direkt in der Liste — anklicken, ändern, wegklicken. Gespeichert wird automatisch, es gibt keinen Speichern-Knopf.</p>
+
+{{FIG:sus}}
+<ol class="legend" start="2" style="counter-reset: lg 1">
+  <li><strong>Voller Name.</strong> So steht er in der Übersicht und im Export.</li>
+  <li><strong>Rufname.</strong> Der Name, den du im Unterricht tatsächlich sagst. Wenn du nie „Beatrice Hunziker“ diktierst, sondern immer nur „Bea“, gehört „Bea“ hierhin.</li>
+  <li><strong>Aliasse.</strong> Alles andere, was beim Diktieren herauskommen kann: <em>Anni</em>, <em>Feli</em>, <em>Collin</em> mit zwei L. Tippen, Enter drücken, fertig. Das × entfernt einen Alias wieder.</li>
+  <li><span class="ui">deaktivieren</span> für Abgänge: Die Person verschwindet aus den Vorschlägen, ihre bisherigen Beobachtungen bleiben. <span class="ui">löschen</span> entfernt den Eintrag ganz — die Beobachtungen bleiben erhalten, aber ohne Zuordnung. Im Zweifel: deaktivieren.</li>
+</ol>
+
+<div class="note">
+  <span class="label">Warum sich Aliasse lohnen</span>
+  <p>Die Spracherkennung hört, was sie hören will. Aus „Colin“ wird schnell „Collin“, aus „Öztürk“ wird „Öztürck“, und wer im Unterricht „Bea“ heisst, wird nie als „Beatrice Hunziker“ erkannt. Jeder Alias, den du einmal einträgst, ist eine Korrektur, die du nie wieder von Hand machen musst. Zwei Minuten am Semesteranfang, ernsthaft.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="aufnahme">
+<h2><span class="num">6</span>Aufnahme machen</h2>
+<p class="sub">Auf dem Handy, direkt nach der Lektion. Reiter <span class="ui">Aufnehmen</span>.</p>
+
+<h3>Schritt 1: Klasse wählen</h3>
+{{FIG:klassenwahl}}
+<ol class="legend">
+  <li>Reiter <span class="ui">Aufnehmen</span> — das ist der Startbildschirm der App.</li>
+  <li>Klasse antippen. Die Beobachtungen werden dieser Klasse zugeordnet, und nur ihre Namensliste wird für die Zuordnung verwendet.</li>
+</ol>
+
+<h3>Schritt 2: Diktieren</h3>
+{{FIG:aufnahme}}
+<ol class="legend">
+  <li><strong>Das Textfeld.</strong> Antippen, dann das Mikrofon deiner Tastatur benutzen (siehe Tabelle unten). Du kannst genauso gut tippen oder das Diktierte nachträglich korrigieren — die App unterscheidet das nicht.</li>
+  <li>Der Hinweis erinnert an genau das: Die Spracherkennung macht dein Gerät, nicht die App. Deshalb funktioniert es in jedem Browser gleich.</li>
+  <li><span class="ui">Auswerten</span> schickt den <strong>Text</strong> (nie Ton) an den Server. Nach ein paar Sekunden bist du im Prüfen-Schritt.</li>
+</ol>
+
+<h3>Wie du auf deinem Gerät diktierst</h3>
+<p>muendlich bringt keine eigene Spracherkennung mit, sondern verwendet die, die in deinem Gerät ohnehin eingebaut ist. Das ist die kürzeste Version pro System:</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Gerät</th><th>So diktierst du</th><th>Offizielle Anleitung</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>iPhone / iPad</td>
+      <td>Ins Textfeld tippen, dann das <strong>Mikrofon rechts neben der Leertaste</strong>. Fehlt es: <em>Einstellungen → Allgemein → Tastatur → Diktierfunktion aktivieren</em>.</td>
+      <td><a href="https://support.apple.com/de-ch/guide/iphone/iph2c0651d2/ios">Text auf dem iPhone diktieren</a></td>
+    </tr>
+    <tr>
+      <td>Android</td>
+      <td>Ins Textfeld tippen, dann das <strong>Mikrofon auf der Gboard-Tastatur</strong> (oben rechts oder hinter dem Zahnrad).</td>
+      <td><a href="https://support.google.com/gboard/answer/2781851?hl=de">Sprechen statt tippen (Gboard)</a></td>
+    </tr>
+    <tr>
+      <td>Windows</td>
+      <td>Ins Textfeld klicken, dann <kbd>Windows</kbd> + <kbd>H</kbd>.</td>
+      <td><a href="https://support.microsoft.com/de-de/windows/verwenden-der-spracheingabe-zum-sprechen-anstatt-zum-eingeben-fec94565-c4bd-329d-e59a-af033fa5689f">Spracheingabe unter Windows</a></td>
+    </tr>
+    <tr>
+      <td>Mac</td>
+      <td>Ins Textfeld klicken, dann <kbd>🌐</kbd> bzw. <kbd>fn</kbd> <strong>zweimal</strong> drücken.</td>
+      <td><a href="https://support.apple.com/de-ch/guide/mac-help/mh40584/mac">Auf dem Mac diktieren</a></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p style="font-size:.9rem;color:var(--muted)">Neuere iPhones und Macs erkennen Sprache vollständig auf dem Gerät. Bei Windows und Android kann die Erkennung je nach Einstellung über die Server des Herstellers laufen — wenn dir das wichtig ist, prüfe in den Einstellungen deines Geräts die Offline-Spracherkennung. Die App selbst schickt in keinem Fall Ton irgendwohin.</p>
+
+<div class="note ok">
+  <span class="label">So diktierst du, dass die Zuordnung stimmt</span>
+  <p><strong>Name zuerst, ein Satz pro Person, am Ende ein Punkt.</strong> Mehr Regeln gibt es nicht. „Punkt“ und „Komma“ kannst du beim Diktieren mitsprechen — dein Gerät setzt die Zeichen dann selbst.</p>
+</div>
+
+<p>Ein realistisches Beispiel, wortwörtlich so diktiert:</p>
+<div class="quote">Anna hat im Unterricht Netflix geschaut und liess sich auch durch wiederholte Einwände meinerseits nicht davon überzeugen, dass der Unterricht spannender sein könnte als ihre Serie. Colin hat die Diskussion zu Faust gerettet. Darian war körperlich anwesend. Feli hat die Hausaufgaben vergessen, dafür eine kreative Ausrede geliefert. Yannick hat sich gleich zweimal gemeldet.</div>
+<p>Fünf Sätze, fünf Personen, eine davon (Yannick) gar nicht auf der Klassenliste — und genau daraus macht die App im nächsten Schritt fünf einzelne Einträge.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="cloud">
+<h2><span class="num">7</span>Prüfen, was an die KI ging</h2>
+<p class="sub">Im Prüfen-Schritt, ganz oben: <span class="ui">🔒 An die Cloud gesendet</span> aufklappen.</p>
+
+<p>Der Kasten ist kein Kleingedrucktes, sondern der Beleg: Er zeigt <strong>wörtlich</strong> den Text, den die KI bekommen hat. Wenn dort noch ein echter Name steht, siehst du das — und weisst es, statt es hoffen zu müssen.</p>
+
+{{FIG:cloud}}
+<ol class="legend">
+  <li>Der tatsächlich versendete Text. Aus <em>Anna</em> wurde <em>Student1</em>, aus <em>Colin</em> <em>Student2</em> — und aus dem nicht auf der Liste stehenden <em>Yannick</em> wurde <em>Person1</em>. Der Inhalt der Beobachtung geht mit, die Namen nicht.</li>
+  <li>Die Erinnerung daran, dass die echten Namen erst nach der Rückmeldung der KI wieder eingesetzt werden — auf dem Server der Schule, nicht in der Cloud.</li>
+</ol>
+
+<div class="note warn">
+  <span class="label">Ehrlich bleiben</span>
+  <p>Der <em>Inhalt</em> der Beobachtung verlässt sehr wohl das Haus — nur eben ohne Namen. Schreib deshalb nichts hinein, was du nicht auch in ein Zeugnis schreiben würdest: keine Diagnosen, keine Angaben über Familien, keine Vermutungen über Dritte. Beobachtetes Verhalten, nicht Interpretation.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="namen">
+<h2><span class="num">8</span>Wie die Namen erkannt werden</h2>
+<p class="sub">Warum meistens alles stimmt — und woran du merkst, wenn nicht.</p>
+
+<p>Bevor irgendetwas das Haus verlässt, sucht der Server im diktierten Text nach Namen. Er tut das in drei Durchgängen, in dieser Reihenfolge:</p>
+
+<ol class="legend">
+  <li><strong>Deine Klassenliste.</strong> Alles, was unter <span class="ui">Verwalten</span> erfasst ist — vollständiger Name, Rufname, Spitznamen — wird zu <em>Student1</em>, <em>Student2</em> … Nur diese Platzhalter kann die App später einer Person in deiner Klasse zuordnen.</li>
+  <li><strong>Eine Liste gängiger Vornamen.</strong> Fängt Namen ab, die nicht in deiner Klasse stehen: die Austauschschülerin, ein Geschwister, die Kollegin von nebenan. Wird zu <em>Person1</em>.</li>
+  <li><strong>Sprachverständnis für den Rest.</strong> Erkennt Namen und Orte, die in keiner Liste stehen. Wird zu <em>Person1</em> bzw. <em>Ort1</em>.</li>
+</ol>
+
+<h3>Schreibweisen sind egal, ähnliche Namen nicht</h3>
+
+<p>Die Spracherkennung schreibt Namen selten so, wie sie in deiner Klassenliste stehen. Die App gleicht deshalb auch nach Klang ab: <em>Marko</em> findet <em>Marco</em>, <em>Sofie</em> findet <em>Sophie</em>, <em>Kolin</em> findet <em>Colin</em>. Dafür musst du nichts tun.</p>
+
+<p>Was sie bewusst <strong>nicht</strong> tut: aus einem längeren Namen einen kürzeren heraushören. <em>Hannah</em> wird nicht zu <em>Anna</em>, <em>Annabelle</em> nicht zu <em>Anna</em>, <em>Timothy</em> nicht zu <em>Timo</em>. Solche Namen kommen im Prüfen-Schritt als <span class="ui">nicht auf der Liste</span> an — die Entscheidung liegt bei dir, nicht bei der App.</p>
+
+<div class="note warn">
+  <span class="label">Wo die Erkennung an Grenzen stösst</span>
+  <p><strong>Nachnamen werden nicht erkannt.</strong> „Muster hat gestört“ findet niemanden. Sag Vornamen — darauf ist die Erkennung ausgelegt.<br>
+  <strong>Kurze Rufnamen nur exakt.</strong> Namen mit drei Buchstaben oder weniger (<em>Bea</em>, <em>Kim</em>, <em>Tim</em>) werden nur bei genauer Schreibweise gefunden. Sonst würde aus jedem „bei“ und jedem „nur“ ein Kind.<br>
+  <strong>Sehr ähnliche Namen in derselben Klasse</strong> — etwa <em>Sophia</em> und <em>Sophie</em> — kann die App nicht zuverlässig auseinanderhalten. Solche Karten lohnt es sich genauer anzuschauen.<br>
+  <strong>Zwei gleiche Vornamen</strong> in einer Klasse: „Anna“ allein wird dann keiner der beiden zugeordnet, sondern kommt als <span class="ui">nicht auf der Liste</span> an. Sag in dem Fall beide Namen.</p>
+</div>
+
+<div class="note ok">
+  <span class="label">Was am meisten hilft</span>
+  <p><strong>Spitznamen pflegen.</strong> Jeder Name, unter dem du eine Person tatsächlich ansprichst, gehört unter <span class="ui">Verwalten</span> zu ihr. Das ist mit Abstand der grösste Hebel — jeder erfasste Spitzname ist eine Nachfrage weniger.<br>
+  <strong>Vornamen sagen, nicht Nachnamen.</strong><br>
+  <strong>Bei gleichen Vornamen den ganzen Namen sagen</strong> — „Anna Muster hat …“.<br>
+  <strong>Einmal nachschauen, was rausging.</strong> Der Kasten aus <a href="#cloud">Abschnitt 7</a> zeigt es wörtlich. Ein einziger Blick reicht, um Vertrauen zu fassen oder es zu verlieren.</p>
+</div>
+
+<p style="font-size:.9rem">Und die Einschränkung, die keine Technik löst: Die Namen gehen nicht raus, der <em>Inhalt</em> schon. „Der Junge, der sich den Arm gebrochen hat“ benennt eine Person auch ohne Namen — siehe <a href="#cloud">Abschnitt 7</a>.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="pruefen">
+<h2><span class="num">9</span>Zuweisungen prüfen</h2>
+<p class="sub">Der einzige Schritt, der wirklich deine Aufmerksamkeit braucht. Er dauert etwa zwanzig Sekunden.</p>
+
+<p>Oben steht, wie viele Beobachtungen erkannt wurden und wie viele davon <em>zu klären</em> sind. Sind es null, kannst du direkt auf <span class="ui">Speichern</span>.</p>
+
+{{FIG:pruefen}}
+<ol class="legend">
+  <li>Der Cloud-Beleg aus dem vorherigen Abschnitt.</li>
+  <li><strong>Grüner Balken links und grüne Markierung:</strong> sicher zugeordnet. Hier musst du nichts tun.</li>
+  <li><strong>Der Text.</strong> Direkt änderbar — Formulierung glätten, Halbsatz streichen, was auch immer. Was hier steht, wird gespeichert.</li>
+  <li><strong>Tendenz</strong> (positiv / neutral / negativ). Der Vorschlag der KI, jederzeit überstimmbar. „War körperlich anwesend“ als neutral einzustufen ist grosszügig, aber vertretbar.</li>
+  <li><strong>Was damit passieren soll.</strong> Standard ist <em>Speichern</em> bei der vorgeschlagenen Person; du kannst stattdessen <em>Zuordnen zu…</em> (andere Person aus der Klasse), <em>Als neue/n Schüler/in</em>, <em>Ohne Zuordnung</em> oder <em>Verwerfen</em> wählen.</li>
+</ol>
+
+<p>Orange markiert sind die Fälle, die du anschauen solltest: <strong>nicht auf der Liste</strong> (der Name kommt in der Klasse nicht vor) oder <strong>unsicher</strong> (der Name passt nur ungefähr).</p>
+
+{{FIG:pruefen-neu}}
+<ol class="legend" start="6" style="counter-reset: lg 5">
+  <li><strong>Nicht auf der Liste.</strong> Yannick ist neu in der Klasse. Die App schlägt <em>Als neue/n Schüler/in</em> vor und legt ihn beim Speichern gleich an — den vollen Namen kannst du im Feld darunter ergänzen. Wäre es dagegen bloss eine verhörte Schreibweise einer bekannten Person, wählst du <em>Zuordnen zu…</em> und nimmst sie aus der Liste. (Und trägst danach in <a href="#sus">Verwalten</a> einen Alias nach.)</li>
+  <li><span class="ui">Speichern</span> schreibt alle Einträge auf einmal in die Klasse.</li>
+</ol>
+
+{{FIG:gespeichert}}
+<ol class="legend">
+  <li>Bestätigung mit der Anzahl gespeicherter Beobachtungen. <span class="ui">Neue Aufnahme</span> bleibt in derselben Klasse — praktisch, wenn dir auf dem Weg ins Lehrerzimmer noch etwas einfällt.</li>
+</ol>
+
+<div class="note">
+  <span class="label">Verwerfen ist auch eine Antwort</span>
+  <p>Wenn die Spracherkennung Unsinn produziert hat oder du beim Diktieren abgebrochen wurdest: <em>Verwerfen</em> wählen. Nichts wird gespeichert, und du kannst neu diktieren. Ein halb richtiger Eintrag ist schlimmer als keiner.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="uebersicht">
+<h2><span class="num">10</span>Übersicht &amp; bewerten</h2>
+<p class="sub">Am Computer, wenn du Zeit hast. Reiter <span class="ui">Übersicht</span>.</p>
+
+<h3>Die Klasse auf einen Blick</h3>
+{{FIG:uebersicht}}
+<ol class="legend">
+  <li><span class="ui">CSV</span> und <span class="ui">PDF</span> exportieren die ganze Klasse (siehe <a href="#export">Abschnitt 11</a>).</li>
+  <li>Eine Person anklicken öffnet ihre Zeitleiste.</li>
+  <li>Die Zähler: <strong>grün positiv, grau neutral, rot negativ</strong>. Hier siehst du auf einen Blick auch, wen du das ganze Semester über nie erwähnt hast — meist die stillen Personen in der dritten Reihe, und das ist beim Notensetzen die nützlichste Information dieses Bildschirms.</li>
+</ol>
+
+<h3>Eine Person im Detail</h3>
+{{FIG:detail}}
+<ol class="legend">
+  <li>Der <strong>Trendbalken</strong>: das Verhältnis positiv / neutral / negativ über das Semester.</li>
+  <li>Der <strong>Notenschnitt</strong> aus allen Noten, die du unten vergeben hast. Ein Anhaltspunkt, kein Automatismus — die Note setzt du.</li>
+  <li>Der <strong>Text</strong> jeder Beobachtung, weiterhin änderbar. Klick hinein, ändere ihn, klick weg — gespeichert.</li>
+  <li>Die <strong>Tendenz</strong>, auch hier nachträglich korrigierbar.</li>
+  <li><strong>Note</strong> von 1 bis 6, halbe Noten erlaubt (4.5 geht, 4.3 nicht). Das Feld ist optional: Viele Beobachtungen sind Notizen, keine Bewertungen — lass es dann einfach leer.</li>
+  <li><span class="ui">löschen</span> entfernt die einzelne Beobachtung. Ohne Papierkorb, also mit einem Moment Bedenkzeit.</li>
+</ol>
+
+<div class="note ok">
+  <span class="label">Der Rhythmus, der sich bewährt</span>
+  <p>Diktieren nach der Lektion, prüfen im gleichen Zug — Noten aber erst am Semesterende in einem Durchgang vergeben. Dann bewertest du die ganze Zeitleiste im Zusammenhang, statt jeden Dienstag im Affekt.</p>
+</div>
+</section>
+
+<!-- ==================================================================== -->
+<section id="export">
+<h2><span class="num">11</span>Exportieren</h2>
+<p class="sub">Für die Notenkonferenz, das Elterngespräch oder das Archiv.</p>
+
+<p>Auf jeder Klassen- und Personenseite liegen oben die beiden Knöpfe <span class="ui">⭳ CSV</span> und <span class="ui">⭳ PDF</span>.</p>
+<ul>
+  <li><strong>PDF</strong> — zum Ausdrucken und Mitnehmen. Das ist das Format für die Konferenz und das Gespräch.</li>
+  <li><strong>CSV</strong> — zum Weiterrechnen in Excel oder Numbers. Enthält alles, inklusive der Beobachtungen ohne Zuordnung.</li>
+</ul>
+<p>Weil in der App nichts automatisch gelöscht wird, ist der Export auch dein Archivweg: exportieren, ablegen, dann die Klasse löschen. Für ein abgeschlossenes Semester ist das die sauberste Variante — die Daten liegen dort, wo die Unterlagen deiner Schule ohnehin liegen, und nicht unbegrenzt in einer App.</p>
+</section>
+
+<!-- ==================================================================== -->
+<section id="tipps">
+<h2><span class="num">12</span>Tipps aus dem Alltag</h2>
+
+<ul>
+  <li><strong>Sofort oder gar nicht.</strong> Der Nutzen der App steht und fällt damit, dass du in den zwei Minuten nach der Lektion diktierst. Nach dem Mittagessen erinnerst du dich nur noch an die Ausreisser.</li>
+  <li><strong>Auch das Unauffällige aufnehmen.</strong> „Hat die ganze Lektion an einem Satz gefeilt, der Satz war am Ende gut“ ist beim Notensetzen mehr wert als die dritte Notiz über die lauteste Person.</li>
+  <li><strong>Beobachtung statt Urteil.</strong> „Hat dreimal das Handy hervorgeholt“ hält jedem Gespräch stand. „Ist desinteressiert“ nicht.</li>
+  <li><strong>Zwei bis vier Personen pro Aufnahme</strong> sind ein guter Schnitt. Wer versucht, die ganze Klasse in einem Atemzug abzuhandeln, bekommt am Ende einen Satz voller Nebensätze zurück, den niemand mehr entwirren kann.</li>
+  <li><strong>Nichts geht verloren.</strong> Eine Beobachtung, die niemandem zugeordnet werden kann, landet unter „ohne Zuordnung“ und ist im CSV-Export enthalten. Sie wird nicht stillschweigend weggeworfen.</li>
+</ul>
+</section>
+
+<!-- ==================================================================== -->
+<section id="faq">
+<h2><span class="num">13</span>Wenn etwas klemmt</h2>
+
+<details class="faq">
+  <summary>Die Spracherkennung schreibt Namen falsch.</summary>
+  <p>Normal, und dafür gibt es die Aliasse. Trag die falsche Schreibweise in <span class="ui">Verwalten</span> bei der betreffenden Person als Alias ein — ab dann wird sie automatisch richtig zugeordnet.</p>
+</details>
+
+<details class="faq">
+  <summary>Eine Beobachtung wurde der falschen Person zugeordnet.</summary>
+  <p>Im Prüfen-Schritt: <em>Zuordnen zu…</em> wählen und die richtige Person nehmen. Wenn es schon gespeichert ist: In der Übersicht bei der falschen Person löschen und bei der richtigen neu erfassen. Und danach einen Alias eintragen, damit es nicht wieder passiert.</p>
+</details>
+
+<details class="faq">
+  <summary>Ich sehe kein Mikrofon in der App.</summary>
+  <p>Richtig so — muendlich hat bewusst kein eigenes Mikrofon, ausser dein Browser kann Sprache lokal erkennen. Du benutzt das Mikrofon deiner Tastatur (siehe <a href="#aufnahme">Abschnitt 6</a>). Der Umweg über die Tastatur ist der Grund, warum kein Ton verschickt wird.</p>
+</details>
+
+<details class="faq">
+  <summary>„Auswerten“ dreht ewig oder meldet einen Fehler.</summary>
+  <p>Meist die Verbindung. Dein Text bleibt im Feld stehen — warte auf besseres Netz und tippe nochmals auf <span class="ui">Auswerten</span>. Bleibt es dabei, kopier den Text irgendwohin, damit er nicht verloren geht, und melde dich.</p>
+</details>
+
+<details class="faq">
+  <summary>Ich habe versehentlich zweimal gespeichert.</summary>
+  <p>Passiert nichts: Die App erkennt das und speichert eine Aufnahme nur einmal. Wenn eine Meldung erscheint, dass die Aufnahme bereits gespeichert wurde, ist alles in Ordnung — schau in der Übersicht nach.</p>
+</details>
+
+<details class="faq">
+  <summary>Eine Schülerin verlässt die Klasse.</summary>
+  <p><span class="ui">deaktivieren</span> statt löschen. Sie erscheint dann nicht mehr in den Vorschlägen, ihre bisherigen Beobachtungen bleiben aber vollständig erhalten — was du brauchst, falls die Note trotzdem noch zu setzen ist.</p>
+</details>
+
+<details class="faq">
+  <summary>Sieht sonst jemand meine Beobachtungen?</summary>
+  <p>Nein. Jede Lehrperson sieht ausschliesslich die eigenen Klassen; auch die Administration hat keinen Zugriff auf die Inhalte. Was du exportierst und weitergibst, entscheidest du.</p>
+</details>
+
+<details class="faq">
+  <summary>Ich habe mein Passwort vergessen.</summary>
+  <p>Mail an <a href="mailto:philip.schaffner@kwi.ch?subject=muendlich%20—%20Passwort">philip.schaffner@kwi.ch</a>, du bekommst ein neues Startpasswort. Beim Passwortwechsel werden alle laufenden Sitzungen abgemeldet — du musst dich danach auf allen Geräten neu anmelden.</p>
+</details>
+</section>
+
+<footer>
+  <p><strong>muendlich</strong> — Fragen, Accounts, Fehlermeldungen und Wünsche an <a href="mailto:philip.schaffner@kwi.ch">philip.schaffner@kwi.ch</a>.</p>
+  <p>Alle Namen und Beobachtungen in diesem Handbuch sind erfunden. Ähnlichkeiten mit lebenden Klassen sind rein statistisch bedingt.</p>
+</footer>
+
+</div>
+</body>
+</html>

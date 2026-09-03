@@ -1,0 +1,543 @@
+/* ============================================================
+   muendlich — Chalk design system
+   Warm neutrals · plum accent (Observations) · light & dark
+   Same class vocabulary as before — drop-in replacement.
+   ============================================================ */
+
+/* ---- Design tokens ---------------------------------------- */
+:root {
+  --bg: oklch(0.985 0.006 83);
+  --card: oklch(0.998 0.003 83);
+  --surface-2: oklch(0.955 0.008 83);
+  --border: oklch(0.912 0.010 83);
+  --border-strong: oklch(0.845 0.013 83);
+  --text: oklch(0.290 0.014 70);
+  --muted: oklch(0.520 0.012 70);
+  --faint: oklch(0.660 0.010 70);
+  --shadow: 0 1px 2px rgba(52,42,26,.05), 0 6px 20px rgba(52,42,26,.05);
+  --shadow-lg: 0 2px 4px rgba(52,42,26,.06), 0 18px 44px rgba(52,42,26,.10);
+
+  /* Observations accent — plum */
+  --primary: oklch(0.700 0.108 340);
+  --primary-dark: oklch(0.640 0.120 340);
+  --primary-tint: oklch(0.955 0.032 338);
+  --primary-ink: oklch(0.515 0.118 338);
+
+  /* Sentiment / status */
+  --ok: oklch(0.475 0.098 152);
+  --ok-tint: oklch(0.955 0.030 155);
+  --ok-solid: oklch(0.705 0.088 152);
+  --warn: oklch(0.500 0.090 68);
+  --warn-tint: oklch(0.958 0.034 82);
+  --warn-solid: oklch(0.760 0.100 78);
+  --err: oklch(0.520 0.150 26);
+  --err-tint: oklch(0.955 0.032 30);
+  --err-solid: oklch(0.635 0.140 26);
+  --neu-solid: oklch(0.760 0.012 80);
+
+  --r-sm: 9px;
+  --r: 12px;
+  --r-md: 14px;
+  --r-lg: 16px;
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --bg: oklch(0.205 0.008 75);
+  --card: oklch(0.248 0.010 75);
+  --surface-2: oklch(0.292 0.011 75);
+  --border: oklch(0.335 0.012 75);
+  --border-strong: oklch(0.410 0.014 75);
+  --text: oklch(0.935 0.008 83);
+  --muted: oklch(0.705 0.011 80);
+  --faint: oklch(0.560 0.010 80);
+  --shadow: 0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.36);
+  --shadow-lg: 0 2px 6px rgba(0,0,0,.34), 0 22px 52px rgba(0,0,0,.48);
+
+  --primary-tint: oklch(0.345 0.054 338);
+  --primary-ink: oklch(0.830 0.098 338);
+  --ok: oklch(0.825 0.088 155);
+  --ok-tint: oklch(0.335 0.044 152);
+  --warn: oklch(0.840 0.088 82);
+  --warn-tint: oklch(0.350 0.046 78);
+  --err: oklch(0.820 0.110 30);
+  --err-tint: oklch(0.345 0.060 28);
+  color-scheme: dark;
+}
+
+/* ---- Base ------------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  transition: background .25s ease, color .25s ease;
+}
+::selection { background: var(--primary-tint); }
+
+/* Self-hosted, subset to the icons this app uses (no Google Fonts request). */
+@font-face {
+  font-family: "Material Symbols Rounded";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./assets/material-symbols-subset.woff2") format("woff2");
+}
+
+.mi {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal; font-style: normal; line-height: 1;
+  letter-spacing: normal; text-transform: none; white-space: nowrap;
+  font-feature-settings: "liga";
+  vertical-align: middle;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px calc(16px + env(safe-area-inset-right)) 56px
+    calc(16px + env(safe-area-inset-left));
+}
+
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }
+h2 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.015em; margin: 4px 0 14px; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 0 0 10px; }
+
+.muted { color: var(--muted); }
+.small { font-size: .8rem; }
+.error { color: var(--err); font-weight: 500; }
+
+/* A failed request keeps the screen it happened on — see ErrorBanner.jsx. */
+.error-banner {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--err-tint); color: var(--err);
+  border: 1px solid var(--err-solid); border-radius: var(--r);
+  padding: 10px 12px; margin: 0 0 14px;
+  font-size: .9rem; line-height: 1.4; font-weight: 500;
+}
+.error-banner-text { flex: 1; }
+.error-banner-x {
+  background: none; border: none; color: inherit; flex-shrink: 0;
+  font-size: 1.2rem; line-height: 1; padding: 0 2px;
+}
+
+/* Per-field validation message, sitting directly under the offending input. */
+.field-error {
+  color: var(--err); font-size: .82rem; font-weight: 500;
+  margin: -4px 0 10px;
+}
+input.invalid, textarea.invalid, select.invalid { border-color: var(--err-solid); }
+input.invalid:focus, textarea.invalid:focus, select.invalid:focus {
+  border-color: var(--err-solid);
+  box-shadow: 0 0 0 4px var(--err-tint);
+}
+
+/* ---- Confirm dialog --------------------------------------- */
+/* Above the guided tour's spotlight layers (1000–1002). */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(0, 0, 0, .5);
+}
+.modal {
+  width: 100%; max-width: 400px;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 22px; box-shadow: var(--shadow-lg);
+}
+.modal h3 { margin: 0 0 8px; }
+.modal-message { margin: 0; font-size: .94rem; line-height: 1.45; color: var(--muted); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.modal-cancel, .modal-confirm {
+  border-radius: var(--r-sm); padding: 10px 16px; font-weight: 600; font-size: .95rem;
+}
+.modal-cancel {
+  background: var(--card); color: var(--text); border: 1px solid var(--border-strong);
+}
+.modal-cancel:hover { border-color: var(--text); }
+.modal-confirm {
+  background: var(--err-solid); color: #fff; border: 1px solid transparent;
+}
+.modal-confirm:hover { filter: brightness(1.05); }
+.modal-confirm:focus-visible, .modal-cancel:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+/* Involuntary sign-out on the login screen: an explanation, not a failure. */
+.notice {
+  background: var(--warn-tint); color: var(--warn);
+  border-radius: var(--r-sm); padding: 10px 12px; margin: 0 0 14px;
+  font-size: .9rem;
+}
+
+/* Unknown-route screen: the mistyped path, shown back to the visitor. */
+.card code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em;
+  background: var(--surface-2); border-radius: var(--r-sm); padding: 1px 6px;
+  word-break: break-all;
+}
+
+/* ---- Demo session ----------------------------------------- */
+.demo-banner {
+  background: var(--warn-tint); color: var(--warn);
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 10px 13px; margin-bottom: 14px;
+  font-size: .88rem; line-height: 1.4;
+}
+
+/* ---- Guided tour ------------------------------------------ */
+/* Transparent by design: the dimming comes from the spotlight's box-shadow.
+   This layer exists only to swallow clicks aimed at the app, which a shadow
+   cannot do. */
+.tour-blocker { position: fixed; inset: 0; z-index: 1000; }
+.tour-hole {
+  position: fixed; z-index: 1001; pointer-events: none;
+  border-radius: var(--r); outline: 2px solid var(--primary);
+  /* The cut-out trick: an oversized spread dims everything except this box. */
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55);
+  transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease;
+}
+.tour-card {
+  position: fixed; z-index: 1002;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 16px 18px; box-shadow: var(--shadow);
+}
+.tour-card:focus { outline: none; }
+.tour-card h3 { margin: 0 0 6px; }
+.tour-card p { margin: 0; font-size: .92rem; line-height: 1.45; }
+.tour-card .tour-step {
+  color: var(--muted); font-size: .74rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; margin-bottom: 5px;
+}
+.tour-actions { display: flex; align-items: center; gap: 2px; margin-top: 15px; }
+.tour-spacer { flex: 1; }
+.tour-next {
+  background: var(--primary); color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 9px 17px; font-weight: 600;
+}
+.tour-next:hover { filter: brightness(1.05); }
+.tour-link {
+  color: var(--primary-ink); font-weight: 600; font-size: .92rem;
+  text-decoration: none; padding: 9px 10px; border-radius: var(--r-sm);
+}
+.tour-link:hover { background: var(--primary-tint); }
+@media (prefers-reduced-motion: reduce) { .tour-hole { transition: none; } }
+
+/* ---- Top bar ---------------------------------------------- */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; margin-bottom: 18px; padding: 6px 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--primary); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.brand-badge .mi { font-size: 20px; }
+.brand-name { font-weight: 700; font-size: 1.1rem; letter-spacing: -.01em; }
+.topbar-actions { display: flex; align-items: center; gap: 6px; }
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text);
+  border-radius: 9px; box-shadow: var(--shadow);
+}
+.theme-toggle .mi { font-size: 19px; }
+.theme-toggle:active { transform: scale(.96); }
+
+/* Handbook link — same footprint as the theme toggle so the two sit as a pair. */
+.help-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted);
+  border-radius: 9px; box-shadow: var(--shadow);
+  font-weight: 700; font-size: 1.05rem; line-height: 1;
+  text-decoration: none; flex-shrink: 0;
+  transition: color .15s ease, border-color .15s ease;
+}
+.help-btn:hover { color: var(--primary-ink); border-color: var(--primary); }
+.help-btn:active { transform: scale(.96); }
+.login-top { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+/* Logged out, the app used to show a name and two fields and nothing else —
+   a link from a colleague led to a page that explained nothing. */
+.login-intro { margin: -8px 0 20px; color: var(--muted); font-size: .95rem; line-height: 1.5; }
+.login-intro a { color: var(--primary-ink); font-weight: 600; }
+
+/* ---- Buttons ---------------------------------------------- */
+button { font: inherit; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+
+.link {
+  background: none; border: none; color: var(--primary-ink);
+  padding: 6px 4px; font-weight: 600;
+}
+.link:hover { color: var(--primary); }
+.back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+
+.primary {
+  width: 100%; background: var(--primary); color: #fff; border: none;
+  border-radius: var(--r); padding: 15px;
+  font-size: 1.05rem; font-weight: 600; margin-top: 16px;
+  box-shadow: var(--shadow);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: filter .15s ease;
+}
+.primary:hover:not(:disabled) { filter: brightness(1.05); }
+.primary:active { background: var(--primary-dark); }
+
+/* ---- Cards & forms ---------------------------------------- */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow);
+}
+.card.center { text-align: center; }
+
+form label { display: block; margin-bottom: 14px; font-weight: 600; font-size: .92rem; }
+input, textarea, select {
+  width: 100%; margin-top: 6px; padding: 12px 13px;
+  border: 1.5px solid var(--border-strong); border-radius: var(--r);
+  font: inherit; font-size: 1rem;
+  background: var(--bg); color: var(--text);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+input::placeholder, textarea::placeholder { color: var(--faint); }
+input:focus, textarea:focus, select:focus {
+  outline: none; border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-tint);
+}
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  padding-right: 36px;
+}
+/* Password reveal toggle. The Material Symbols subset carries `visibility` (the
+   brand badge uses it) but not `visibility_off` — a second glyph would mean
+   regenerating the subset, as HelpButton.jsx notes. So the on-state is carried
+   by the pressed styling and the aria-label, not by a slashed eye. */
+.pw-field { position: relative; display: block; margin-top: 6px; }
+.pw-field input { margin-top: 0; padding-right: 52px; }
+.pw-toggle {
+  position: absolute; top: 0; bottom: 0; right: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; padding: 0;   /* 44px: minimum comfortable touch target */
+  background: none; border: none; border-radius: var(--r-sm);
+  color: var(--faint);
+}
+.pw-toggle:hover { color: var(--text); }
+.pw-toggle[aria-pressed="true"] {
+  color: var(--primary-ink); background: var(--primary-tint);
+}
+.pw-toggle .mi { font-size: 20px; }
+
+form button[type="submit"] {
+  width: 100%; background: var(--primary); color: #fff; border: none;
+  border-radius: var(--r); padding: 14px; font-weight: 600; font-size: 1rem;
+  box-shadow: var(--shadow); transition: filter .15s ease;
+}
+form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
+
+/* ---- Tabs ------------------------------------------------- */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 20px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 4px;
+}
+.tab {
+  flex: 1; background: none; border: none; border-radius: var(--r-sm);
+  padding: 9px 8px; font-size: .95rem; font-weight: 600; color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background .15s ease, color .15s ease;
+}
+.tab .mi { font-size: 19px; }
+.tab.active { color: var(--primary-ink); background: var(--card); box-shadow: var(--shadow); }
+
+/* ---- Class list ------------------------------------------- */
+.class-list, .student-list, .draft-list, .obs-list, .manage-list { list-style: none; padding: 0; margin: 0; }
+.class-item {
+  width: 100%; text-align: left; background: var(--card);
+  border: 1px solid var(--border); border-radius: var(--r);
+  padding: 17px 44px 17px 16px; margin-bottom: 10px; position: relative;
+  box-shadow: var(--shadow); transition: border-color .15s ease, transform .12s ease;
+}
+.class-item:hover { border-color: var(--primary); transform: translateX(2px); }
+.class-item::after {
+  content: "chevron_right"; font-family: "Material Symbols Rounded"; font-size: 22px;
+  color: var(--faint); position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+}
+.class-name { font-weight: 600; font-size: 1.05rem; }
+/* Second line: what tells two same-named classes apart. */
+.class-meta { display: block; font-size: .82rem; margin-top: 3px; }
+
+/* ---- Capture ---------------------------------------------- */
+.mic {
+  width: 100%; border: 1.5px solid var(--primary); color: var(--primary-ink);
+  background: var(--card); border-radius: var(--r-md); padding: 22px;
+  font-size: 1.15rem; font-weight: 600; margin-bottom: 12px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: var(--shadow);
+}
+.mic .mi { font-size: 26px; }
+.mic-on {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .74; } }
+.transcript { min-height: 130px; resize: vertical; line-height: 1.5; }
+.hint {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: .85rem; margin-top: 10px;
+}
+.hint .mi { font-size: 20px; flex-shrink: 0; }
+
+/* ---- "sent to cloud" disclosure --------------------------- */
+.sent-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 10px 14px; margin-bottom: 14px;
+}
+.sent-box summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.sent-text {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .82rem;
+  background: var(--surface-2); border-radius: var(--r-sm);
+  padding: 10px; margin: 10px 0 4px; white-space: pre-wrap; word-break: break-word;
+}
+
+/* ---- Draft review ----------------------------------------- */
+.draft-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 4px solid var(--border-strong); border-radius: var(--r);
+  padding: 15px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.draft-item.status-matched { border-left-color: var(--ok-solid); }
+.draft-item.status-low_confidence,
+.draft-item.status-off_roster { border-left-color: var(--warn-solid); }
+.draft-item.status-unassigned { border-left-color: var(--neu-solid); }
+.draft-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.draft-head strong { font-size: 1.05rem; }
+.badge {
+  font-size: .8rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  /* Neutral default, for statements of fact like "vermutlich kein Name" —
+     nothing is wrong there, so nothing should look alarming. */
+  background: var(--surface-2); color: var(--muted);
+}
+.badge.ok { background: var(--ok-tint); color: var(--ok); }
+.badge.warn { background: var(--warn-tint); color: var(--warn); }
+.draft-text { min-height: 46px; }
+.draft-controls { display: flex; gap: 8px; margin-top: 10px; }
+.draft-controls select { flex: 1; }
+.draft-name { margin-top: 8px; }
+
+.big-ok {
+  font-size: 2.6rem; color: var(--ok-solid); margin: 0 auto 8px;
+  width: 74px; height: 74px; border-radius: 22px; background: var(--ok-tint);
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+
+/* ---- Export buttons --------------------------------------- */
+.export-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.export {
+  background: var(--card); border: 1px solid var(--border-strong); color: var(--text);
+  border-radius: var(--r-sm); padding: 9px 15px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s ease;
+}
+.export:hover { border-color: var(--primary); color: var(--primary-ink); }
+
+/* ---- Student list (overview) ------------------------------ */
+.student-item {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 15px 16px; margin-bottom: 10px;
+  box-shadow: var(--shadow); transition: border-color .15s ease;
+}
+.student-item:hover { border-color: var(--primary); }
+.student-name { font-weight: 600; }
+.counts { display: flex; gap: 6px; }
+.chip {
+  font-size: .85rem; padding: 2px 10px; border-radius: 999px; font-weight: 600;
+  font-family: "IBM Plex Mono", monospace;
+}
+.chip.pos { background: var(--ok-tint); color: var(--ok); }
+.chip.neu { background: var(--surface-2); color: var(--muted); }
+.chip.neg { background: var(--err-tint); color: var(--err); }
+
+/* ---- Trend ------------------------------------------------ */
+.trend {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 18px; box-shadow: var(--shadow);
+}
+.bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.seg.pos { background: var(--ok-solid); }
+.seg.neu { background: var(--neu-solid); }
+.seg.neg { background: var(--err-solid); }
+.trend-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
+.avg { margin-left: auto; font-weight: 600; font-family: "IBM Plex Mono", monospace; }
+
+/* ---- Observation list (student detail) -------------------- */
+.obs-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 4px solid var(--border-strong); border-radius: var(--r);
+  padding: 13px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.obs-item.status-sent-positive { border-left-color: var(--ok-solid); }
+.obs-item.status-sent-neutral { border-left-color: var(--neu-solid); }
+.obs-item.status-sent-negative { border-left-color: var(--err-solid); }
+.obs-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.obs-meta .muted { font-family: "IBM Plex Mono", monospace; font-size: .85rem; }
+.del { background: none; border: none; color: var(--err); font-size: .85rem; font-weight: 500; }
+.del:hover { text-decoration: underline; }
+.obs-controls { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.obs-controls select { flex: 1; }
+.score {
+  display: flex; align-items: center; gap: 6px; font-size: .9rem;
+  color: var(--muted); font-weight: 600; white-space: nowrap;
+}
+.score input { width: 66px; margin: 0; text-align: center; font-family: "IBM Plex Mono", monospace; }
+/* The native spin buttons sat on top of the value in a field this narrow, so a
+   saved "4.5" read as "4.:". They are no loss here: half-steps between 1 and 6
+   are quicker to type than to click, and the field keeps type="number" for the
+   numeric keypad on a phone. */
+.score input::-webkit-outer-spin-button,
+.score input::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.score input { appearance: textfield; -moz-appearance: textfield; }
+
+/* ---- Management ------------------------------------------- */
+.manage-list { margin: 0 0 20px; }
+.manage-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 13px 15px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.manage-item.inactive { opacity: .55; }
+.manage-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.manage-open { flex: 1; text-align: left; background: none; border: none; padding: 4px 0; font-size: 1rem; color: var(--text); font-weight: 600; }
+.manage-name { font-weight: 600; }
+.manage-actions { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+.manage-actions .link, .manage-actions .del { padding: 4px 2px; font-size: .9rem; }
+
+.student-edit { display: flex; gap: 8px; margin-bottom: 8px; }
+.stud-name { flex: 2; margin: 0; }
+.stud-short { flex: 1; margin: 0; }
+
+.alias-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.alias-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface-2); color: var(--muted);
+  border-radius: 999px; padding: 3px 5px 3px 11px; font-size: .85rem; font-weight: 500;
+}
+.alias-x { background: none; border: none; color: var(--muted); font-size: 1rem; line-height: 1; padding: 0 4px; }
+.alias-add { width: 110px; margin: 0; padding: 6px 9px; font-size: .85rem; }
+
+/* ---- Add / edit forms ------------------------------------- */
+.add-form { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow); }
+.add-form h3 { margin: 0 0 12px; }
+.add-form input { margin-bottom: 10px; }
+.add-form .row, .editor .row { display: flex; gap: 8px; }
+.add-form .row input { flex: 1; }
+.editor input { margin-bottom: 8px; }

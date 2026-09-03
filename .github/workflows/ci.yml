@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      # Tests also run against Postgres, not only sqlite: sqlite ignores Numeric
+      # precision and CHECK semantics differ, so a sqlite-only suite lets
+      # production-only failures through.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: muendlich_test
+          POSTGRES_USER: muendlich
+          POSTGRES_PASSWORD: testing-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U muendlich"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Tests (sqlite)
+        run: pytest -q
+
+      - name: Migrations apply cleanly (Postgres)
+        env:
+          ENVIRONMENT: dev
+          JWT_SECRET: ci-secret-long-enough-to-pass-validation-check
+          DATABASE_URL: postgresql+psycopg://muendlich:testing-only@localhost:5432/muendlich_test
+          ANONYMIZE_ENABLED: "false"
+        run: alembic upgrade head
+
+      - name: No schema drift between models and migrations
+        env:
+          ENVIRONMENT: dev
+          JWT_SECRET: ci-secret-long-enough-to-pass-validation-check
+          DATABASE_URL: postgresql+psycopg://muendlich:testing-only@localhost:5432/muendlich_test
+          ANONYMIZE_ENABLED: "false"
+        run: |
+          # An empty autogenerate diff is the invariant: if this fails, the models
+          # and the migration history have diverged.
+          alembic revision --autogenerate -m "drift-check" >/dev/null
+          generated=$(ls -t alembic/versions/*drift_check.py | head -1)
+          if grep -qE '^\s+op\.' "$generated"; then
+            echo "::error::Models and migrations have diverged:"
+            sed -n '/^def upgrade/,/^def downgrade/p' "$generated"
+            rm -f "$generated"
+            exit 1
+          fi
+          rm -f "$generated"
+
+      - name: Migrations are reversible
+        env:
+          ENVIRONMENT: dev
+          JWT_SECRET: ci-secret-long-enough-to-pass-validation-check
+          DATABASE_URL: postgresql+psycopg://muendlich:testing-only@localhost:5432/muendlich_test
+          ANONYMIZE_ENABLED: "false"
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: No inline scripts in the built HTML
+        run: |
+          # The CSP is a strict script-src 'self'; an inline <script> would be
+          # silently blocked at runtime, so fail the build instead.
+          # Every <script> opening tag must carry a src attribute.
+          inline=$(grep -oE '<script[^>]*>' dist/index.html | grep -v 'src=' || true)
+          if [ -n "$inline" ]; then
+            echo "::error::dist/index.html contains an inline <script>; the CSP forbids it"
+            printf '%s\n' "$inline"
+            exit 1
+          fi
