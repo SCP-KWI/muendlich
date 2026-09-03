@@ -1,7 +1,0 @@
-node_modules/
-package-lock.json
-demo.db
-backend.log
-check/
-shots/*.png
-__pycache__/
