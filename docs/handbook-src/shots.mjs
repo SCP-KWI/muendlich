@@ -209,6 +209,7 @@ const browser = await puppeteer.launch({
     { n: 1, sel: "textarea.transcript", side: "l" },
     { n: 2, sel: ".hint", side: "r" },
     { n: 3, sel: "button.primary", side: "l" },
+    { n: 4, sel: ".roster-list", side: "r" },
   ]);
 
   await clickText(page, "button.primary", "Auswerten");

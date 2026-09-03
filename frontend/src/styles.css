@@ -573,3 +573,23 @@ form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.05); }
   border: 1px solid var(--ok-solid); border-radius: var(--r);
   padding: 10px 12px; line-height: 1.4; font-weight: 500;
 }
+
+/* ---- Roster under the capture button ---------------------- */
+/* The names to run through before dictating; pupils without any observation
+   yet stand out, since they are the ones easiest to forget. */
+.roster { margin-top: 24px; }
+.roster h3 { margin: 0 0 2px; font-size: 1rem; }
+.roster-sub { font-size: .82rem; margin: 0 0 10px; }
+.roster-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.roster-item {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 5px 4px 12px; font-size: .9rem; font-weight: 500;
+}
+.roster-count {
+  font-family: "IBM Plex Mono", monospace; font-size: .78rem; font-weight: 600;
+  min-width: 24px; text-align: center; border-radius: 999px; padding: 2px 7px;
+  background: var(--surface-2); color: var(--muted);
+}
+.roster-item.none { border-color: var(--warn-solid); }
+.roster-item.none .roster-count { background: var(--warn-tint); color: var(--warn); }

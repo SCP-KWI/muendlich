@@ -43,8 +43,10 @@ export default defineConfig({
         short_name: "muendlich",
         description: "Capture post-lesson observations by voice",
         lang: "de",
-        theme_color: "#2c5f7c",
-        background_color: "#ffffff",
+        // Same pink as the theme-color meta in index.html (--primary); the
+        // splash background is the app's light --bg, not plain white.
+        theme_color: "#b573a4",
+        background_color: "#fcfaf6",
         display: "standalone",
         icons: [
           {

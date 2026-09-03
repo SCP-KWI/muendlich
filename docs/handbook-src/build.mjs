@@ -16,7 +16,7 @@ const FIGURES = {
   sus: { shot: "03-sus-verwalten", crop: [150, 726], only: [3, 4, 5, 6] },
   "sus-neu": { shot: "03-sus-verwalten", crop: [1540, 2295], only: [1, 2] },
   klassenwahl: { shot: "07-klasse-waehlen", crop: [70, 420] },
-  aufnahme: { shot: "08-aufnahme", crop: [150, 640] },
+  aufnahme: { shot: "08-aufnahme", crop: [150, 840] },
   cloud: { shot: "10-an-die-cloud", crop: [270, 620] },
   pruefen: { shot: "09-pruefen", crop: [196, 620], only: [1, 2, 3, 4, 5] },
   "pruefen-neu": { shot: "09-pruefen", crop: [1190, 1610], only: [6, 7] },

@@ -33,6 +33,30 @@ export function Capture({ klass, onDraft }) {
   const [sendError, setSendError] = useState(null);
   const [voiceOn, setVoiceOn] = useState(readVoicePreference);
   const areaRef = useRef(null);
+  // The class list with a tally per pupil, so the teacher can run through the
+  // names before dictating and see who has had no observation yet. null until
+  // loaded; a failed load just leaves it out, the capture itself is unaffected.
+  const [roster, setRoster] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([api.listStudents(klass.id), api.classStats(klass.id)])
+      .then(([students, stats]) => {
+        if (cancelled) return;
+        const totals = new Map(stats.students.map((s) => [s.student_id, s.total]));
+        setRoster(
+          students
+            .filter((s) => s.active)
+            .map((s) => ({ id: s.id, name: s.full_name, total: totals.get(s.id) ?? 0 }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setRoster(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [klass.id]);
 
   const value = listening ? transcript : text;
   const showMic = supported && voiceOn;
@@ -148,6 +172,31 @@ export function Capture({ klass, onDraft }) {
       >
         {busy ? "Verarbeite…" : "Auswerten"}
       </button>
+
+      {roster && roster.length > 0 && (
+        <section className="roster" aria-label="Klassenliste">
+          <h3>Klassenliste</h3>
+          <p className="muted roster-sub">
+            Die Zahl ist die Anzahl bisheriger Beobachtungen.
+          </p>
+          <ul className="roster-list">
+            {roster.map((s) => (
+              <li
+                key={s.id}
+                className={s.total === 0 ? "roster-item none" : "roster-item"}
+              >
+                {s.name}
+                <span
+                  className="roster-count"
+                  aria-label={`${s.total} Beobachtungen`}
+                >
+                  {s.total}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
